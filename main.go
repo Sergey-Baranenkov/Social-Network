@@ -52,15 +52,19 @@ func main() {
 	r.GET("/auth",authPageHandler)
 	r.POST("/registration",registrationHandler)
 	r.POST("/login",loginHandler)
-	r.NotFound = redirectHandler
+	r.GET("/frontend/css/*filepath",fasthttp.FSHandler("./frontend/css",2))
+	r.GET("/frontend/images/*filepath",fasthttp.FSHandler("./frontend/images",2))
 	r.GET("/secretpage",AccessMiddleware(secretPageHandler))
+	r.NotFound = redirectHandler
 	fasthttp.ListenAndServe(":8080",r.Handler)
 	dbConn.Close(context.Background())
 	rdb.Close()
 }
+
 func redirectHandler(ctx *fasthttp.RequestCtx){
 	ctx.Redirect("/auth",2020)
 }
+
 func secretPageHandler(ctx *fasthttp.RequestCtx){
 	fmt.Fprint(ctx,"Hello"+ByteSliceToString(ctx.Request.Header.Cookie("userId"))+"!")
 }
@@ -79,6 +83,7 @@ func AccessMiddleware(next fasthttp.RequestHandler)fasthttp.RequestHandler{
 		}
 	}
 }
+
 
 func authReactHandler(ctx *fasthttp.RequestCtx){
 	ctx.SendFile("frontend/auth.jsx")
