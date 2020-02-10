@@ -16,13 +16,14 @@ import (
 	"strconv"
 	"strings"
 	"unsafe"
+	"coursework/postgres"
 )
 
 
 
 var (
+	rc = postgres.RegistrationConn{}
 	authHTML *template.Template
-	dbConn *pgx.Conn
 	rdb *redis.Client
 	err error
 	salt = []byte("Ilya Bychkov")
@@ -30,14 +31,18 @@ var (
 )
 
 func main() {
+	if err:= rc.CreateConnection(os.Getenv("REGISTER_DB"));err!=nil{
+		log.Fatal(err)
+	}
+
+	if err := rc.CreateRegTable();err!=nil{
+		log.Fatal(err)
+	}
+
 	if authHTML, err = template.ParseFiles("frontend/auth.html"); err != nil{
 		log.Fatal(err)
-		return
 	}
-	if dbConn, err = pgx.Connect(context.Background(), os.Getenv("REGISTER_DB")); err != nil{
-		log.Fatal(err)
-		return
-	}
+
 
 	rdb = redis.NewClient(&redis.Options{
 		Addr: ":6379",
@@ -56,9 +61,16 @@ func main() {
 	r.GET("/frontend/images/*filepath",fasthttp.FSHandler("./frontend/images",2))
 	r.GET("/secretpage",AccessMiddleware(secretPageHandler))
 	r.NotFound = redirectHandler
-	fasthttp.ListenAndServe(":8080",r.Handler)
-	dbConn.Close(context.Background())
-	rdb.Close()
+
+	if err:= fasthttp.ListenAndServe(":8080",r.Handler); err!= nil{
+		log.Println("error when starting server: " + err.Error())
+	}
+	if err := rc.Close(); err!=nil{
+		log.Println("error when closing regDb conn: " + err.Error())
+	}
+	if err := rdb.Close(); err!=nil{
+		log.Println("error when closing regRedis conn: " + err.Error())
+	}
 }
 
 func redirectHandler(ctx *fasthttp.RequestCtx){
@@ -76,7 +88,7 @@ func authPageHandler(ctx *fasthttp.RequestCtx){
 func AccessMiddleware(next fasthttp.RequestHandler)fasthttp.RequestHandler{
 	return func(ctx *fasthttp.RequestCtx){
 		redisAccessToken, err := rdb.Get(ByteSliceToString(ctx.Request.Header.Cookie("userId"))).Result()
-		if err == nil && bytes.Compare(ctx.Request.Header.Cookie("access_token"),StringToByteSlice(redisAccessToken)) == 0{
+		if err == nil && bytes.Compare(ctx.Request.Header.Cookie("accessToken"),StringToByteSlice(redisAccessToken)) == 0{
 			next(ctx)
 		}else{
 			fmt.Fprint(ctx,"U have no permission there")
@@ -93,41 +105,55 @@ func loginHandler(ctx *fasthttp.RequestCtx){
 	//тут должна быть валидация
 	email:= ctx.FormValue("email")
 	password:= ctx.FormValue("password")
-	if len(email)!=0 && len(password)!=0{
-		var dbToken []byte
-		var userId int
-		dbConn.QueryRow(context.Background(),"select user_id,token from registration where email = $1 limit 1", email).Scan(&userId,&dbToken)
-		userToken:=sha512.Sum512(append(password,salt...))
-		if bytes.Compare(dbToken,userToken[:]) == 0{
-			successfulAuth(ctx,strconv.Itoa(userId))
-			ctx.Redirect("/secretpage",2020)
-		}else{
-			fmt.Println(userId,dbToken,userToken)
-			ctx.Error("Неправильные имя пользователя или пароль",402)
-		}
-	}else{
+	if len(email)==0 || len(password)==0{
 		ctx.Error("Поля не заполнены",402)
 	}
+
+	var dbToken []byte
+	var userId int
+	var firstName string
+	var lastName string
+	rc.Conn.QueryRow(context.Background(),"select user_id, first_name, last_name, token from registration where email = $1 limit 1", email).Scan(
+		&userId,
+		&firstName,
+		&lastName,
+		&dbToken)
+	if userToken:=sha512.Sum512(append(password,salt...)); bytes.Compare(dbToken,userToken[:]) != 0{
+		ctx.Error("Incorrect email/pass combination",402)
+		return
+	}
+	successfulAuth(ctx,strconv.Itoa(userId))
+	ctx.Redirect("/secretpage",200)
+
 }
 
 func registrationHandler(ctx *fasthttp.RequestCtx){
+	firstName:=ctx.FormValue("first_name")
+	lastName:=ctx.FormValue("last_name")
 	email:= ctx.FormValue("email")
 	password:= ctx.FormValue("password")
-	if len(email)!=0 && len(password)!=0{
-		if err:= dbConn.QueryRow(context.Background(),"select 1 from registration where email = $1 limit 1", email).Scan();err == pgx.ErrNoRows{
-			token:=sha512.Sum512(append(password,salt...))
-			var userId int
-			if err := dbConn.QueryRow(context.Background(),"insert into registration (email,token) values($1,$2) returning user_id",string(email),token[:]).Scan(&userId);err!=nil{
-				log.Println(err)
-			}else{
-				successfulAuth(ctx,strconv.Itoa(userId))
-				ctx.Redirect("/secretpage",200)
-			}
-		}else{
-			ctx.Error("User already exists",402)
-		}
-	}else{//сделать валидацию
+
+	if len(email)==0 || len(password)==0{
 		ctx.Error("Поля не заполнены",402)
+	}
+
+	if err:= rc.Conn.QueryRow(context.Background(),"select 1 from registration where email = $1 limit 1", email).Scan();err != pgx.ErrNoRows{
+		ctx.Error("User already exists",402)
+	}
+
+	token:=sha512.Sum512(append(password,salt...))
+	var userId int
+	if err := rc.Conn.QueryRow(context.Background(), "insert into registration (first_name,last_name,email,token) values($1,$2,$3,$4) returning user_id",
+		ByteSliceToString(firstName),
+		ByteSliceToString(lastName),
+		ByteSliceToString(email),
+		token[:]).Scan(&userId);
+	err!=nil{
+		log.Println(err)
+		ctx.Error("Unhandled error",404)
+	}else{
+		successfulAuth(ctx,strconv.Itoa(userId))
+		ctx.Redirect("/secretpage",200)
 	}
 }
 
@@ -144,7 +170,7 @@ func CreateCookie(key string, value string, expire int) *fasthttp.Cookie {
 	return &authCookie
 }
 
-func successfulAuth(ctx *fasthttp.RequestCtx,userId string){
+func successfulAuth(ctx *fasthttp.RequestCtx, userId string){
 	var access_token string
 	for {
 		access_token = Hasher(128)
@@ -153,7 +179,7 @@ func successfulAuth(ctx *fasthttp.RequestCtx,userId string){
 		}
 	}
 
-	accessTokenCookie :=CreateCookie("access_token",access_token,36000000000)
+	accessTokenCookie :=CreateCookie("accessToken",access_token,36000000000)
 	idCookie :=CreateCookie("userId",userId,36000000000)
 	rdb.Set(userId,access_token,360000000000)
 	ctx.Response.Header.SetCookie(accessTokenCookie)
