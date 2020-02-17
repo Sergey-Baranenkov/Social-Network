@@ -43,9 +43,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-
+       
 	rdb = redis.NewClient(&redis.Options{
-		Addr: ":6379",
+		Addr: "redis:6379",
 	})
 
 	if err = rdb.Ping().Err();err!=nil{
@@ -61,8 +61,10 @@ func main() {
 	r.GET("/frontend/images/*filepath",fasthttp.FSHandler("./frontend/images",2))
 	r.GET("/secretpage",AccessMiddleware(secretPageHandler))
 	r.NotFound = redirectHandler
-
-	if err:= fasthttp.ListenAndServe(":8080",r.Handler); err!= nil{
+        
+        clientPort:="8080"
+        fmt.Println("LISTENING ON PORT " + clientPort)
+	if err:= fasthttp.ListenAndServe(":" + clientPort, r.Handler); err!= nil{
 		log.Println("error when starting server: " + err.Error())
 	}
 	if err := rc.Close(); err!=nil{
