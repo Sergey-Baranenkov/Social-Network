@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"coursework/postgres"
 	"crypto/sha512"
 	"fmt"
 	"github.com/fasthttp/router"
@@ -16,7 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"unsafe"
-	"coursework/postgres"
 )
 
 
@@ -62,7 +62,7 @@ func main() {
 	r.GET("/secretpage",AccessMiddleware(secretPageHandler))
 	r.NotFound = redirectHandler
         
-        clientPort:="8080"
+        clientPort:="8090"
         fmt.Println("LISTENING ON PORT " + clientPort)
 	if err:= fasthttp.ListenAndServe(":" + clientPort, r.Handler); err!= nil{
 		log.Println("error when starting server: " + err.Error())
@@ -76,7 +76,7 @@ func main() {
 }
 
 func redirectHandler(ctx *fasthttp.RequestCtx){
-	ctx.Redirect("/auth",2020)
+	ctx.Redirect("/auth",302)
 }
 
 func secretPageHandler(ctx *fasthttp.RequestCtx){
@@ -109,6 +109,7 @@ func loginHandler(ctx *fasthttp.RequestCtx){
 	password:= ctx.FormValue("password")
 	if len(email)==0 || len(password)==0{
 		ctx.Error("Поля не заполнены",402)
+		return
 	}
 
 	var dbToken []byte

@@ -1,3 +1,4 @@
+#REGISTER_DB=postgres://me:12345@postgres:5432/register_db
 version: "3"
 
 services:
@@ -5,9 +6,9 @@ services:
                 build: .
                 command: ./app
                 ports:
-                        - "8080:8080"
+                        - "8090:8090"
                 environment:
-                        - REGISTER_DB=postgres://me:12345@postgres:5432/register_db
+                        REGISTER_DB: $REGISTER_DB
                 depends_on:
                         - postgres
                         - redis
@@ -17,9 +18,9 @@ services:
                 volumes:
                         - "./databases/pg:/var/lib/postgresql/data"
                 environment:
-                        POSTGRES_USER: me
-                        POSTGRES_PASSWORD: 12345
-                        POSTGRES_DB: register_db
+                        POSTGRES_USER: $PG_USER
+                        POSTGRES_PASSWORD: $PG_PASS
+                        POSTGRES_DB: $PG_DB
                 expose:
                         - "5432"
         redis:
