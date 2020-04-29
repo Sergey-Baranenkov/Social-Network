@@ -1,30 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"testing"
 )
-
-func TestSecretPage(t *testing.T) {
-	res, err := http.Get("http://127.0.0.1:8090/secretpage")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b := string(body)
-	if b != "U have no permission there" {
-		t.Errorf("Secret form handled incorrectly, expecGOted: U have no permission there, got %s", b)
-	}
-}
 
 func TestNotFound(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://127.0.0.1:8090/some/undefined/link", nil)
@@ -46,58 +28,52 @@ func TestNotFound(t *testing.T) {
 	}
 }
 
-func TestEmptyForm(t *testing.T) {
+type RegistrationStruct struct{
+	FirstName string `json:"first_name"`
+	LastName string `json:"last_name"`
+	Email string `json:"email"`
+	Sex      string `json:"sex"`
+	Password string `json:"password"`
+}
 
-	res, err := http.PostForm("http://127.0.0.1:8090/login", nil)
-
+func TestCorrectRegistration(t *testing.T){
+	json_req, _ := json.Marshal(&RegistrationStruct{"testname","testsurname","test@mail.ru","М","12345"})
+	resp, err := http.Post("http://127.0.0.1:8090/registration", "application/json", bytes.NewReader(json_req))
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err.Error())
 	}
-	body, err := ioutil.ReadAll(res.Body)
+	status_code := resp.StatusCode
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b:=string(body)
-	if b != "Поля не заполнены" {
-		t.Errorf("Empty form handled incorrectly, expected: Поля не заполнены, got %s", b)
+	if status_code != http.StatusOK{
+		t.Errorf("Status is not 200, but %d", status_code)
 	}
 }
 
+type loginStruct struct{
+	Email     string
+	Password  string
+}
+
 func TestIncorrectLogin(t *testing.T) {
-
-	res, err := http.PostForm("http://127.0.0.1:8090/login", url.Values{"email": {"undefined@lol.en"}, "password": {"1234"}})
-
+	json_req, _ := json.Marshal(&loginStruct{"badEmail","12345"})
+	resp, err := http.Post("http://127.0.0.1:8090/login", "application/json", bytes.NewReader(json_req))
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err.Error())
 	}
-	body, err := ioutil.ReadAll(res.Body)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	b:= string(body)
-	if b != "Incorrect email/pass combination" {
-		t.Errorf("Incorrect login, expexted: Incorrect email/pass combination, got %s ", b)
+	status_code := resp.StatusCode
+	if status_code != 403{
+		t.Errorf("Status is not 403, but %d", status_code)
 	}
 }
 
 func TestCorrectLogin(t *testing.T) {
-	_, err := http.PostForm("http://127.0.0.1:8090/registration", url.Values{"email": {"good@yandex.ru"}, "password": {"1234"}, "first_name": {"Vasya"}, "last_name":{"Pupkin"}})
-
+	json_req, _ := json.Marshal(&loginStruct{"test@mail.ru","12345"})
+	resp, err := http.Post("http://127.0.0.1:8090/login", "application/json", bytes.NewReader(json_req))
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err.Error())
 	}
-
-	loginRes, err:= http.PostForm("http://127.0.0.1:8090/login", url.Values{"email": {"good@yandex.ru"}, "password": {"1234"}})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if loginRes.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %d. Got %d.", http.StatusOK, loginRes.StatusCode)
+	status_code := resp.StatusCode
+	if status_code != http.StatusOK{
+		t.Errorf("Status is not 200, but %d", status_code)
 	}
 }

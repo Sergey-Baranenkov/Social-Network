@@ -1,0 +1,48 @@
+name: Social_network_CI
+
+on:
+  push:
+    branches: [ feature/github_workflow ]
+    
+jobs:
+  server_launch:
+    runs-on: ubuntu-latest
+        
+    steps:
+
+    - uses: actions/checkout@v2
+      
+    - name: launch_server
+      run: docker-compose up -d;
+      env:
+          PATH_TO_DOCKERHUB: ${{ secrets.DOCKER_USERNAME }} 
+          PG_USER: ${{ secrets.PGUSER }} 
+          PG_PASS: ${{ secrets.PGPASSWORD }} 
+          PG_DBNAME: ${{ secrets.PGDBNAME }}
+        
+    - name: check running containers
+      run: docker ps -a
+    
+    - name: run tests
+      run: sudo docker build -t test tests/. && sudo docker run --network host test
+    
+    - name: push to docker
+      run: | 
+            docker login --username ${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
+            docker push ${{secrets.DOCKER_USERNAME}}/go_react_socialnetwork:ver_0.$GITHUB_RUN_NUMBER
+
+  code_style_checks:
+    name: go codestyle checks
+    runs-on: ubuntu-latest
+    steps:
+    - name: clone repo 
+      uses: actions/checkout@v2
+      
+    - name: go1.12 linter
+      uses: shoukoo/golang-pipeline/go1.12/linter@master
+      with:
+        GOLINT: on
+        GOLINTPATH: main
+        MISSPELL: off
+    env:
+      PROJECT_PATH: "./backend"
