@@ -28,8 +28,8 @@ func main() {
 	Router.GET("/get_comments/", CORSHandler(CommentsTestHandler))
 	Router.POST("/leave_comment/", CORSHandler(AddCommentHandler))
 
-	Router.POST("/add_music/", CORSHandler())
-
+	Router.GET("/get_music", CORSHandler(GetMusicHandler))
+	Router.POST("/post_music", CORSHandler(PostMusicHandler))
 	Router.POST("/like/", CORSHandler(LikeHandler))
 
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
@@ -38,7 +38,9 @@ func main() {
 
 	fmt.Println("LISTENING ON PORT " + ServePort)
 
-	if err := fasthttp.ListenAndServe(":"+ServePort, Router.Handler); err != nil {
+	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
+
+	if err := server.ListenAndServe(":"+ServePort); err != nil {
 		log.Println("error when starting server: " + err.Error())
 	}
 

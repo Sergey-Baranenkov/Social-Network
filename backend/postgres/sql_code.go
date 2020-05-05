@@ -274,4 +274,6 @@ insert into objects (auth_id, path, text) values (1, '1','lol');
 insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);
 insert into likes (path, auth_id) values ('2', 1);
+
+insert into music(name, author) values ('Иван','Иванов'), ('Иванов','Иван') ,('Петров', 'Иван'), ('Иванов','Петр');
 `
