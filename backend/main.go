@@ -28,6 +28,8 @@ func main() {
 	Router.GET("/get_comments/", CORSHandler(CommentsTestHandler))
 	Router.POST("/leave_comment/", CORSHandler(AddCommentHandler))
 
+	Router.POST("/add_music/", CORSHandler())
+
 	Router.POST("/like/", CORSHandler(LikeHandler))
 
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))

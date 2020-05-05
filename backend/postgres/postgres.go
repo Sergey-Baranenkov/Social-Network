@@ -22,7 +22,9 @@ func (rc *RegistrationConn) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), UserTable); err!=nil{
 		return err
 	}
-
+	if _, err = rc.Conn.Exec(context.Background(), MusicTable); err!=nil{
+		return err
+	}
 	if _, err = rc.Conn.Exec(context.Background(), ObjectsTable); err!=nil{
 		return err
 	}

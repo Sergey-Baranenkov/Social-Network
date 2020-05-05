@@ -33,10 +33,23 @@ create table if not exists users (
 
     /*edu_and_emp*/
     edu_and_emp_info jsonb
+
+
+	/*music*/
+	
+
+
 ); create index if not exists users_user_id_idx on users (user_id);
 create index if not exists users_full_name_id_idx on users (first_name, last_name);
 `
-
+var MusicTable = `
+create table if not exists music (
+    music_id bigserial primary key,
+    name text not null,
+    author text not null,
+    document tsvector
+); create index music_doc_idx on music using gin(document);
+`
 var ObjectsTable = `
 create table if not exists objects(
     path ltree primary key,
@@ -157,7 +170,20 @@ $update_post_text_process$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS update_post_text_trigger ON public.objects;
 CREATE TRIGGER update_post_text_trigger
 	BEFORE UPDATE ON objects
-FOR EACH ROW EXECUTE PROCEDURE update_post_text_process ();`
+FOR EACH ROW EXECUTE PROCEDURE update_post_text_process ();
+
+CREATE OR REPLACE FUNCTION  add_music() RETURNS trigger AS $$
+    BEGIN
+        new.document = to_tsvector(new.name) || to_tsvector(new.author);
+       	return new;
+    END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS add_music_trigger ON public.music;
+CREATE TRIGGER add_music_trigger
+	BEFORE INSERT ON music
+FOR EACH ROW EXECUTE PROCEDURE add_music ();
+`
 
 var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$
         BEGIN

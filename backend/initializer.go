@@ -19,7 +19,7 @@ var (
 
 func init() {
 	Postgres = postgres.RegistrationConn{}
-	Redis = redis.NewClient(&redis.Options{Addr: "redis:6379"})
+	Redis = redis.NewClient(&redis.Options{Addr: ":6379"})
 	Salt = []byte("Ilya Bychkov")
 	Router = router.New()
 	Validator = validator.New()
@@ -27,7 +27,7 @@ func init() {
 }
 
 func Initializer() error {
-	if err := Postgres.CreateConnection("host=postgres user=me password=12345 dbname=my_coursework_db");
+	if err := Postgres.CreateConnection("host=localhost user=me password=12345 dbname=my_coursework_db");
 	err != nil { return err }
 
 	if err := Postgres.InitDatabasesIfNotExist(); err != nil {
