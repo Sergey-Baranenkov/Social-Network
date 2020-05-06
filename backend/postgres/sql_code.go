@@ -32,12 +32,10 @@ create table if not exists users (
 	who_can_see_info text not null default 'all' check(who_can_see_info in ('all','fo')),
 
     /*edu_and_emp*/
-    edu_and_emp_info jsonb
-
+    edu_and_emp_info jsonb,
 
 	/*music*/
-	
-
+	music_list bigint[]
 
 ); create index if not exists users_user_id_idx on users (user_id);
 create index if not exists users_full_name_id_idx on users (first_name, last_name);
@@ -45,8 +43,9 @@ create index if not exists users_full_name_id_idx on users (first_name, last_nam
 var MusicTable = `
 create table if not exists music (
     music_id bigserial primary key,
-    name text not null,
-    author text not null,
+    adder_id bigint references users(user_id),
+    name text not null default 'undefined',
+    author text not null default 'undefined',
     document tsvector
 ); create index music_doc_idx on music using gin(document);
 `
@@ -275,5 +274,4 @@ insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);
 insert into likes (path, auth_id) values ('2', 1);
 
-insert into music(name, author) values ('Иван','Иванов'), ('Иванов','Иван') ,('Петров', 'Иван'), ('Иванов','Петр');
 `

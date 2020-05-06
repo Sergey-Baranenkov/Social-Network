@@ -20,7 +20,7 @@ func main() {
 
 	Router.GET("/static/*filepath", CORSHandler(fasthttp.FSHandler("./frontend", 1)))
 	Router.GET("/frontend/*filepath", CORSHandler(fasthttp.FSHandler("./frontend", 1)))
-
+	
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
 	Router.GET("/settings/privacy", CORSHandler(PrivacyHandler))
@@ -28,7 +28,8 @@ func main() {
 	Router.GET("/get_comments/", CORSHandler(CommentsTestHandler))
 	Router.POST("/leave_comment/", CORSHandler(AddCommentHandler))
 
-	Router.GET("/get_music", CORSHandler(GetMusicHandler))
+	Router.GET("/get_user_music", CORSHandler(GetUserMusicHandler))
+	Router.GET("/get_all_music", CORSHandler(GetAllMusicHandler))
 	Router.POST("/post_music", CORSHandler(PostMusicHandler))
 	Router.POST("/like/", CORSHandler(LikeHandler))
 
