@@ -18,9 +18,11 @@ func main() {
 	Router.POST("/registration", CORSHandler(RegistrationHandler))
 	Router.POST("/login", CORSHandler(loginHandler))
 
-	Router.GET("/static/*filepath", CORSHandler(fasthttp.FSHandler("./frontend", 1)))
-	Router.GET("/frontend/*filepath", CORSHandler(fasthttp.FSHandler("./frontend", 1)))
-	
+	Router.GET("/static/*filepath", fasthttp.FSHandler("../frontend", 1))
+	Router.GET("/frontend/*filepath", fasthttp.FSHandler("../frontend", 1))
+
+	Router.GET("/music/*filepath", CORSHandler(fasthttp.FSHandler("../music", 1)))
+
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
 	Router.GET("/settings/privacy", CORSHandler(PrivacyHandler))
@@ -31,8 +33,10 @@ func main() {
 	Router.GET("/get_user_music", CORSHandler(GetUserMusicHandler))
 	Router.GET("/get_all_music", CORSHandler(GetAllMusicHandler))
 	Router.POST("/post_music", CORSHandler(PostMusicHandler))
-	Router.POST("/like/", CORSHandler(LikeHandler))
 
+	Router.GET("/remove_music", CORSHandler(DeleteMusicHandler))
+
+	Router.POST("/like/", CORSHandler(LikeHandler))
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
 	Router.POST("/settings/update_basic_info/profile_bg", CORSHandler(AuthMiddleware(UpdateProfileBg)))

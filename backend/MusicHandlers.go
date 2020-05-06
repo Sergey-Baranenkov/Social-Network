@@ -53,7 +53,7 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	musicId:=0
+	musicId := 0
 	query:= "insert into music (adder_id) values ($1) returning music_id"
 	if err := Postgres.Conn.QueryRow(context.Background(), query, adderId).Scan(&musicId);
 		err != nil {
@@ -64,7 +64,7 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	path := functools.PathFromIdGenerator(strconv.Itoa(musicId))
 
 	sb := strings.Builder{}
-	sb.WriteString("./music")
+	sb.WriteString("../music")
 	sb.WriteString(path)
 
 	if err := os.MkdirAll(sb.String(), 0777); err != nil {
@@ -86,6 +86,19 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	_, _ = ctx.WriteString(path)
+	_, _ = ctx.WriteString(strconv.Itoa(musicId))
 
+}
+
+func DeleteMusicHandler (ctx *fasthttp.RequestCtx){
+	userId := 1
+	musicId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("musicId"))
+
+	query := "update users set music_list = array_remove(music_list, $1) where user_id = $2"
+	if _, err := Postgres.Conn.Exec(context.Background(), query, musicId, userId);
+		err != nil {
+		ctx.Error("нет такого music id", 400)
+		return
+	}
+	ctx.SetStatusCode(200)
 }

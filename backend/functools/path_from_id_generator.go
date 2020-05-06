@@ -1,7 +1,6 @@
 package functools
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -9,7 +8,6 @@ func PathFromIdGenerator(id string) string{
 	sb:= strings.Builder{}
 	idLen := len(id)
 	twoLetterSize := idLen >> 1
-	fmt.Println()
 	for i:=0; i < twoLetterSize; i++{
 		sb.WriteByte('/')
 		sb.WriteByte(id[idLen - 2*i - 1])
