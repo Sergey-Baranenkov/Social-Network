@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	Postgres  postgres.RegistrationConn
+	Postgres  postgres.PGXConnection
 	Redis     *redis.Client
 	Salt      []byte
 	Router    *router.Router
@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	Postgres = postgres.RegistrationConn{}
+	Postgres = postgres.PGXConnection{}
 	Redis = redis.NewClient(&redis.Options{Addr: ":6379"})
 	Salt = []byte("Ilya Bychkov")
 	Router = router.New()

@@ -14,9 +14,10 @@ create table if not exists users (
     /*basic_info*/
     avatar_ref text default 'hash_path/def_avatar.jpg', /*исправить путь*/
     bg_ref text default 'hash_path/def_bg',
-	tel decimal(20),
+	tel decimal(20) default 0,
 	city text default '',
-	birthday date, /*обработать*/
+	country text default '',
+	birthday text default '',
 	status int2 check (0 <= status and status <= 5) default 0, /*0-не указано 1 1-женат 2-не женат 3-влюблен 4-все сложно 5-в акт.поиске */
 
     /*hobbies*/
@@ -46,6 +47,7 @@ create table if not exists music (
     adder_id bigint references users(user_id),
     name text not null default 'undefined',
     author text not null default 'undefined',
+	created_at timestamptz default Now(),
     document tsvector
 ); create index music_doc_idx on music using gin(document);
 `

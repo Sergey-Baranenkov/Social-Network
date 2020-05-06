@@ -2,15 +2,14 @@ package postgres
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type RegistrationConn struct {
-	Conn *pgx.Conn
+type PGXConnection struct {
+	Conn *pgxpool.Pool
 }
 
-func (rc *RegistrationConn) InitDatabasesIfNotExist() (err error) {
-
+func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), DropDB); err!=nil{
 		return err
 	}
@@ -51,8 +50,8 @@ func (rc *RegistrationConn) InitDatabasesIfNotExist() (err error) {
 	return nil
 }
 
-func (rc *RegistrationConn) CreateConnection(path string) (err error) {
-	Conn, err := pgx.Connect(context.Background(), path)
+func (rc *PGXConnection) CreateConnection(path string) (err error) {
+	Conn, err := pgxpool.Connect(context.Background(), path)
 	if err != nil {
 		return err
 	}

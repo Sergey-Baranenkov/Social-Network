@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"coursework/functools"
+	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 )
@@ -64,4 +65,42 @@ func AddCommentHandler(ctx *fasthttp.RequestCtx) {
 		fmt.Println("Error:", err)
 		return
 	}
+}
+
+type ProfilePageInfo struct {
+	FirstName  string
+	LastName  string
+	AvatarRef string
+	BgRef     string
+	Tel        int
+	Country    string
+	City       string
+	Birthday   string
+}
+func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
+	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	result := &ProfilePageInfo{}
+
+	query := "select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday from users where user_id = $1"
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(
+																				&result.FirstName,
+																				&result.LastName,
+																				&result.AvatarRef,
+																				&result.BgRef,
+																				&result.Tel,
+																				&result.Country,
+																				&result.City,
+																				&result.Birthday);
+		err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	outputJson, err := json.Marshal(result)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	_, _ = ctx.WriteString(functools.ByteSliceToString(outputJson))
 }
