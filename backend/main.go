@@ -24,10 +24,10 @@ func main() {
 
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 
-	Router.GET("profile/get_comments", CORSHandler(CommentsTestHandler))
-	Router.POST("profile/leave_comment", CORSHandler(AddCommentHandler))
-	Router.POST("profile/like", CORSHandler(LikeHandler))
-	Router.GET("profile/page_info", CORSHandler(GetProfilePageInfo))
+	Router.GET("/profile/get_comments", CORSHandler(CommentsTestHandler))
+	Router.POST("/profile/leave_comment", CORSHandler(AddCommentHandler))
+	Router.POST("/profile/like", CORSHandler(LikeHandler))
+	Router.GET("/profile/page_info", CORSHandler(GetProfilePageInfo))
 
 	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
 	Router.GET("/music/get_all_music", CORSHandler(GetAllMusicHandler))
@@ -41,11 +41,11 @@ func main() {
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
 	Router.POST("/settings/update_basic_info/profile_bg", CORSHandler(AuthMiddleware(UpdateProfileBg)))
 
-	Router.POST("/relations/subscribe", SubscribeHandler)
-	Router.POST("/relations/unsubscribe", UnsubscribeHandler)
-	Router.POST("/relations/add_subscriber_to_friend", AddSubscriberToFriendHandler)
-	Router.POST("/relations/add_friend_to_subscriber", AddFriendToSubscriberHandler)
-	Router.GET("/relations/get_relations",GetRelationshipsHandler)
+	Router.POST("/relations/subscribe", CORSHandler(SubscribeHandler))
+	Router.POST("/relations/unsubscribe", CORSHandler(UnsubscribeHandler))
+	Router.POST("/relations/add_subscriber_to_friend", CORSHandler(AddSubscriberToFriendHandler))
+	Router.POST("/relations/add_friend_to_subscriber", CORSHandler(AddFriendToSubscriberHandler))
+	Router.GET("/relations/get_relations",CORSHandler(GetRelationshipsHandler))
 
 	fmt.Println("LISTENING ON PORT " + ServePort)
 

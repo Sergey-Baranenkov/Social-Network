@@ -282,14 +282,14 @@ select array_to_json(array_agg(row_to_json(t)))
 
 var FriendsSubscribersFunctions = `
 create or replace function add_subscriber_to_friend(param_subscribed_id bigint, param_subscriber_id bigint) returns void AS $$
-    declare is_deleted bool := (with t as (
+    declare is_deleted bool;
+    BEGIN
+        with t as (
             delete from relations__subscribers rst where rst.subscriber_id = param_subscriber_id
                                                          and
                                                          rst.subscribed_id = param_subscribed_id
                 returning *
-        ) select count(*) > 0 from t);
-
-    BEGIN
+        ) select count(*) > 0 from t into is_deleted;
         if is_deleted then
             insert into relations__friends (user_id1, user_id2) values (param_subscribed_id, param_subscriber_id);
         else
@@ -299,14 +299,15 @@ create or replace function add_subscriber_to_friend(param_subscribed_id bigint, 
 $$ LANGUAGE plpgsql;
 
 create or replace function add_friend_to_subscriber (param_subscribed_id bigint, param_subscriber_id bigint) returns void as $$
-    declare is_deleted bool := (with t as (
+    declare is_deleted bool;
+    BEGIN
+        with t as (
             delete from relations__friends where (user_id1 = param_subscriber_id and user_id2 = param_subscribed_id)
                                                      or -- cringe or best practices?
                                                  (user_id1 = param_subscribed_id and user_id2 = param_subscriber_id)
                 returning *
-        ) select count(*) > 0 from t);
+        ) select count(*) > 0 from t into is_deleted;
 
-    BEGIN
         if is_deleted then
             insert into relations__subscribers (subscriber_id, subscribed_id) values (param_subscriber_id, param_subscribed_id);
         else

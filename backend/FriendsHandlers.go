@@ -37,10 +37,10 @@ func UnsubscribeHandler(ctx *fasthttp.RequestCtx){
 func AddSubscriberToFriendHandler(ctx *fasthttp.RequestCtx){
 	subscriberId := 1
 	subscribedId := 2
-
 	query := "select add_subscriber_to_friend($1, $2)"
 	if _, err := Postgres.Conn.Exec(context.Background(), query, subscribedId, subscriberId);
 		err != nil {
+		fmt.Println(err)
 		ctx.Error("Пользователя нет в подписчиках!", 400)
 		return
 	}
@@ -50,10 +50,11 @@ func AddSubscriberToFriendHandler(ctx *fasthttp.RequestCtx){
 func AddFriendToSubscriberHandler(ctx *fasthttp.RequestCtx){
 	subscriberId := 1
 	subscribedId := 2
-
 	query := "select add_friend_to_subscriber($1, $2)"
+
 	if _, err := Postgres.Conn.Exec(context.Background(), query, subscribedId, subscriberId);
 		err != nil {
+			fmt.Println(err)
 		ctx.Error("Пользователя нет в друзьях!", 400)
 		return
 	}
@@ -68,9 +69,10 @@ type RelationshipsInfo struct {
 }
 
 func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
-	userId := 2
-	limit := 10
-	mode := "friends"
+	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
+	mode := functools.ByteSliceToString(ctx.QueryArgs().Peek("mode"))
+
 	var query string
 	switch mode {
 	case "friends":
@@ -98,13 +100,14 @@ func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
 		return
 	}
 	result := &RelationshipsInfo{}
+
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit).Scan(
 																						&result.UserId,
 																						&result.FirstName,
 																						&result.LastName,
-																						&result.AvatarRef );
+																						&result.AvatarRef);
 		err != nil {
-		ctx.Error("Ошибка!", 400)
+		_, _ = ctx.WriteString("[{}]")
 		return
 	}
 	outputJson, err := json.Marshal(result)
