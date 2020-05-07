@@ -20,19 +20,19 @@ func main() {
 	Router.GET("/static/*filepath", fasthttp.FSHandler("../frontend", 1))
 	Router.GET("/frontend/*filepath", fasthttp.FSHandler("../frontend", 1))
 
-	Router.GET("/music/*filepath", CORSHandler(fasthttp.FSHandler("../music", 1)))
+	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music", 1)))
 
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 
-	Router.GET("/get_comments/", CORSHandler(CommentsTestHandler))
-	Router.POST("/leave_comment/", CORSHandler(AddCommentHandler))
-	Router.POST("/like/", CORSHandler(LikeHandler))
-	Router.GET("/profile_page_info", CORSHandler(GetProfilePageInfo))
+	Router.GET("profile/get_comments", CORSHandler(CommentsTestHandler))
+	Router.POST("profile/leave_comment", CORSHandler(AddCommentHandler))
+	Router.POST("profile/like", CORSHandler(LikeHandler))
+	Router.GET("profile/page_info", CORSHandler(GetProfilePageInfo))
 
-	Router.GET("/get_user_music", CORSHandler(GetUserMusicHandler))
-	Router.GET("/get_all_music", CORSHandler(GetAllMusicHandler))
-	Router.POST("/post_music", CORSHandler(PostMusicHandler))
-	Router.GET("/remove_music", CORSHandler(DeleteMusicHandler))
+	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
+	Router.GET("/music/get_all_music", CORSHandler(GetAllMusicHandler))
+	Router.POST("/music/post_music", CORSHandler(PostMusicHandler))
+	Router.GET("/music/remove_music", CORSHandler(DeleteMusicHandler))
 
 	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
 	Router.GET("/settings/privacy", CORSHandler(PrivacyHandler))
@@ -40,6 +40,12 @@ func main() {
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
 	Router.POST("/settings/update_basic_info/profile_bg", CORSHandler(AuthMiddleware(UpdateProfileBg)))
+
+	Router.POST("/relations/subscribe", SubscribeHandler)
+	Router.POST("/relations/unsubscribe", UnsubscribeHandler)
+	Router.POST("/relations/add_subscriber_to_friend", AddSubscriberToFriendHandler)
+	Router.POST("/relations/add_friend_to_subscriber", AddFriendToSubscriberHandler)
+	Router.GET("/relations/get_relations",GetRelationshipsHandler)
 
 	fmt.Println("LISTENING ON PORT " + ServePort)
 

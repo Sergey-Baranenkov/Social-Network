@@ -64,7 +64,7 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	path := functools.PathFromIdGenerator(strconv.Itoa(musicId))
 
 	sb := strings.Builder{}
-	sb.WriteString("../music")
+	sb.WriteString("../music_storage")
 	sb.WriteString(path)
 
 	if err := os.MkdirAll(sb.String(), 0777); err != nil {

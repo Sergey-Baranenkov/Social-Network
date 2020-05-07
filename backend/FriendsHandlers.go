@@ -47,7 +47,7 @@ func AddSubscriberToFriendHandler(ctx *fasthttp.RequestCtx){
 	ctx.SetStatusCode(200)
 }
 
-func AddFriendToSubscriber(ctx *fasthttp.RequestCtx){
+func AddFriendToSubscriberHandler(ctx *fasthttp.RequestCtx){
 	subscriberId := 1
 	subscribedId := 2
 
