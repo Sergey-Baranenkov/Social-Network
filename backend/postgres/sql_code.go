@@ -75,18 +75,19 @@ create sequence if not exists num_posts;
 var RelationsTable = `
 create table if not exists relations__friends (
     user_id1 bigint references users(user_id) on delete cascade on update cascade,
-    user_id2 bigint references users(user_id) on delete cascade on update cascade
+    user_id2 bigint references users(user_id) on delete cascade on update cascade,
+    primary key (user_id1, user_id2)
 );
 create index rfr_uid1 on relations__friends(user_id1);
 create index rfr_uid2 on relations__friends(user_id2);
 
 create table if not exists relations__subscribers (
-    subscriber bigint references users(user_id) on delete cascade on update cascade,
-    subscribed bigint references users(user_id) on delete cascade on update cascade
+    subscriber_id bigint references users(user_id) on delete cascade on update cascade,
+    subscribed_id bigint references users(user_id) on delete cascade on update cascade,
+    primary key (subscriber_id, subscribed_id)
 );
-
-create index rsub_uid1 on relations__subscribers(subscriber);
-create index rsub_uid2 on relations__subscribers(subscribed);
+create index rsub_uid1 on relations__subscribers(subscriber_id);
+create index rsub_uid2 on relations__subscribers(subscribed_id);
 `
 var LikesTable = `
 create table if not exists likes(
@@ -280,38 +281,36 @@ select array_to_json(array_agg(row_to_json(t)))
     $$ PARALLEL SAFE LANGUAGE plpgsql;`
 
 var FriendsSubscribersFunctions = `
-create or replace function add_subscriber_to_friend(subscribed_id bigint, subscriber_id bigint) returns bool AS $$
+create or replace function add_subscriber_to_friend(param_subscribed_id bigint, param_subscriber_id bigint) returns void AS $$
     declare is_deleted bool := (with t as (
-            delete from relations__subscribers where subscriber = subscriber_id
+            delete from relations__subscribers rst where rst.subscriber_id = param_subscriber_id
                                                          and
-                                                     subscribed = subscribed_id
+                                                         rst.subscribed_id = param_subscribed_id
                 returning *
         ) select count(*) > 0 from t);
 
     BEGIN
         if is_deleted then
-            insert into relations__friends (user_id1, user_id2) values (subscribed_id, subscriber_id);
-            return true;
+            insert into relations__friends (user_id1, user_id2) values (param_subscribed_id, param_subscriber_id);
         else
-            return false; -- попытка обмана от пользователя!!!
+            raise exception 'Пользователь не находится в подписчиках!';
         end if;
     END;
 $$ LANGUAGE plpgsql;
 
-create or replace function add_friend_to_subscriber (subscribed_id bigint, subscriber_id bigint) returns bool as $$
+create or replace function add_friend_to_subscriber (param_subscribed_id bigint, param_subscriber_id bigint) returns void as $$
     declare is_deleted bool := (with t as (
-            delete from relations__friends where (user_id1 = subscriber_id or user_id2 = subscribed_id)
-                                                     and -- cringe or best practices?
-                                                 (user_id1 = subscribed_id or user_id2 = subscriber_id)
+            delete from relations__friends where (user_id1 = param_subscriber_id and user_id2 = param_subscribed_id)
+                                                     or -- cringe or best practices?
+                                                 (user_id1 = param_subscribed_id and user_id2 = param_subscriber_id)
                 returning *
         ) select count(*) > 0 from t);
 
     BEGIN
         if is_deleted then
-            insert into relations__subscribers (subscriber, subscribed) values (subscriber_id, subscribed_id);
-            return true;
+            insert into relations__subscribers (subscriber_id, subscribed_id) values (param_subscriber_id, param_subscribed_id);
         else
-            return false; -- попытка обмана от пользователя!!!
+            raise exception 'Пользователь не находится в друзьях!';
         end if;
     END;
 $$ language plpgsql;
