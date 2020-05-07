@@ -63,7 +63,7 @@ create table if not exists objects(
 create index if not exists object_auth_id_idx on objects (auth_id);
 `
 
-var PostInfo = `
+var PostInfoTable = `
 create table if not exists post_info(
     path ltree primary key references objects (path) on delete cascade ,
     num_comments integer default 0 not null,
@@ -72,6 +72,22 @@ create table if not exists post_info(
 create sequence if not exists num_posts;
 `
 
+var RelationsTable = `
+create table if not exists relations__friends (
+    user_id1 bigint references users(user_id) on delete cascade on update cascade,
+    user_id2 bigint references users(user_id) on delete cascade on update cascade
+);
+create index rfr_uid1 on relations__friends(user_id1);
+create index rfr_uid2 on relations__friends(user_id2);
+
+create table if not exists relations__subscribers (
+    subscriber bigint references users(user_id) on delete cascade on update cascade,
+    subscribed bigint references users(user_id) on delete cascade on update cascade
+);
+
+create index rsub_uid1 on relations__subscribers(subscriber);
+create index rsub_uid2 on relations__subscribers(subscribed);
+`
 var LikesTable = `
 create table if not exists likes(
     path ltree references objects (path) on delete cascade ,
@@ -189,7 +205,7 @@ FOR EACH ROW EXECUTE PROCEDURE add_music ();
 var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$
         BEGIN
             return (
-select array_to_json(array_agg(res))
+select json_agg(res)
     from (
             WITH RECURSIVE
                 c AS (
@@ -262,6 +278,45 @@ select array_to_json(array_agg(row_to_json(t)))
         );
         end;
     $$ PARALLEL SAFE LANGUAGE plpgsql;`
+
+var FriendsSubscribersFunctions = `
+create or replace function add_subscriber_to_friend(subscribed_id bigint, subscriber_id bigint) returns bool AS $$
+    declare is_deleted bool := (with t as (
+            delete from relations__subscribers where subscriber = subscriber_id
+                                                         and
+                                                     subscribed = subscribed_id
+                returning *
+        ) select count(*) > 0 from t);
+
+    BEGIN
+        if is_deleted then
+            insert into relations__friends (user_id1, user_id2) values (subscribed_id, subscriber_id);
+            return true;
+        else
+            return false; -- попытка обмана от пользователя!!!
+        end if;
+    END;
+$$ LANGUAGE plpgsql;
+
+create or replace function add_friend_to_subscriber (subscribed_id bigint, subscriber_id bigint) returns bool as $$
+    declare is_deleted bool := (with t as (
+            delete from relations__friends where (user_id1 = subscriber_id or user_id2 = subscribed_id)
+                                                     and -- cringe or best practices?
+                                                 (user_id1 = subscribed_id or user_id2 = subscriber_id)
+                returning *
+        ) select count(*) > 0 from t);
+
+    BEGIN
+        if is_deleted then
+            insert into relations__subscribers (subscriber, subscribed) values (subscriber_id, subscribed_id);
+            return true;
+        else
+            return false; -- попытка обмана от пользователя!!!
+        end if;
+    END;
+$$ language plpgsql;
+`
+
 
 var InitTestSQL = `
 insert into users (email, token, first_name, last_name, sex) values ('baranenkovs@mail.ru', E'\a','Vladimir','Putin', 'М');

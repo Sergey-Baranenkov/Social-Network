@@ -27,23 +27,25 @@ func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), ObjectsTable); err!=nil{
 		return err
 	}
-
 	if _, err = rc.Conn.Exec(context.Background(), LikesTable); err!=nil{
 		return err
 	}
-
-	if _, err = rc.Conn.Exec(context.Background(), PostInfo); err!=nil{
+	if _, err = rc.Conn.Exec(context.Background(), PostInfoTable); err!=nil{
+		return err
+	}
+	if _, err = rc.Conn.Exec(context.Background(), RelationsTable); err!=nil{
 		return err
 	}
 
 	if _, err = rc.Conn.Exec(context.Background(), Triggers); err!=nil{
 		return err
 	}
-
 	if _, err = rc.Conn.Exec(context.Background(), SelectFunctions); err!=nil{
 		return err
 	}
-
+	if _, err = rc.Conn.Exec(context.Background(), FriendsSubscribersFunctions); err!=nil{
+		return err
+	}
 	if _, err = rc.Conn.Exec(context.Background(), InitTestSQL); err!=nil{
 		return err
 	}
