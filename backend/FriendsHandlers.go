@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"coursework/functools"
-	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 )
@@ -61,13 +60,6 @@ func AddFriendToSubscriberHandler(ctx *fasthttp.RequestCtx){
 	ctx.SetStatusCode(200)
 }
 
-type RelationshipsInfo struct {
-	UserId int
-	FirstName  string
-	LastName  string
-	AvatarRef string
-}
-
 func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
@@ -81,39 +73,31 @@ func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
 					select user_id1 from relations__friends where user_id2 = $1
 					union
 					select user_id2 from relations__friends where user_id1 = $1
-				) select user_id1, first_name, last_name, avatar_ref from friends f inner join users on user_id = f.user_id1 limit $2;
+				) select json_agg(row) from (select user_id1, first_name, last_name, avatar_ref from friends f inner join users on user_id = f.user_id1 limit $2) row;
 				`
 	case "subscribers":
 		query = `
 				with subscribers as (
 					select subscriber_id from relations__subscribers where subscribed_id = $1
-				) select subscriber_id, first_name, last_name, avatar_ref from subscribers s inner join users on user_id = s.subscriber_id limit $2;
+				) select json_agg(row) from (select subscriber_id, first_name, last_name, avatar_ref from subscribers s inner join users on user_id = s.subscriber_id limit $2) row;
 				`
 	case "subscribed":
 		query = `
 				with subscribed as (
 					select subscribed_id from relations__subscribers where subscriber_id = 1
-				) select subscribed_id, first_name, last_name, avatar_ref from subscribed s inner join users on user_id = s.subscribed_id;
+				) select json_agg(row) from (select subscribed_id, first_name, last_name, avatar_ref from subscribed s inner join users on user_id = s.subscribed_id limit $2) row;
 				`
 	default:
 		ctx.Error("Не указан тип relationships", 400)
 		return
 	}
-	result := &RelationshipsInfo{}
 
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit).Scan(
-																						&result.UserId,
-																						&result.FirstName,
-																						&result.LastName,
-																						&result.AvatarRef);
+	result := make([]byte, 1024)
+
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit).Scan(&result);
 		err != nil {
 		_, _ = ctx.WriteString("[{}]")
 		return
 	}
-	outputJson, err := json.Marshal(result)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	_, _ = ctx.WriteString(functools.ByteSliceToString(outputJson))
+	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }

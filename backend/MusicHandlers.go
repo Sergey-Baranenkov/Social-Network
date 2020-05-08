@@ -12,7 +12,6 @@ import (
 
 func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
-
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	music := make([]byte, 0, 1024)
 	query:= `select json_agg(m) from (select music_id, name, author, adder_id from music where

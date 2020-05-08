@@ -4,12 +4,15 @@ var DropDB = `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`
 
 var UserTable = `
 create table if not exists users (
-    /*secret_info*/
     user_id bigserial primary key,
+    
+    /*secret info*/
 	email text not null unique,
-	token bytea not null,
+	token bytea not null, 
+	
 	first_name text not null check ( length(first_name) > 0 ),
 	last_name text not null check ( length(last_name) > 0),
+	full_name tsvector,
     sex char(1) not null check ( sex in ('М', 'Ж')),
     /*basic_info*/
     avatar_ref text default 'hash_path/def_avatar.jpg', /*исправить путь*/
@@ -39,7 +42,7 @@ create table if not exists users (
 	music_list bigint[]
 
 ); create index if not exists users_user_id_idx on users (user_id);
-create index if not exists users_full_name_id_idx on users (first_name, last_name);
+create index if not exists users_full_name_id_idx on users using gin(full_name);
 `
 var MusicTable = `
 create table if not exists music (
@@ -201,6 +204,18 @@ DROP TRIGGER IF EXISTS add_music_trigger ON public.music;
 CREATE TRIGGER add_music_trigger
 	BEFORE INSERT ON music
 FOR EACH ROW EXECUTE PROCEDURE add_music ();
+
+CREATE OR REPLACE FUNCTION  update_full_name() RETURNS trigger AS $$
+    BEGIN
+        new.full_name = to_tsvector(new.first_name) || to_tsvector(new.last_name);
+       	return new;
+    END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_full_name_trigger ON public.users;
+CREATE TRIGGER update_full_name_trigger
+	BEFORE INSERT OR UPDATE ON users
+FOR EACH ROW EXECUTE PROCEDURE update_full_name ();
 `
 
 var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$

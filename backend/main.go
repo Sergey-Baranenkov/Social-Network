@@ -20,7 +20,7 @@ func main() {
 	Router.GET("/static/*filepath", fasthttp.FSHandler("../frontend", 1))
 	Router.GET("/frontend/*filepath", fasthttp.FSHandler("../frontend", 1))
 
-	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music", 1)))
+	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
 
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 
@@ -47,6 +47,7 @@ func main() {
 	Router.POST("/relations/add_friend_to_subscriber", CORSHandler(AddFriendToSubscriberHandler))
 	Router.GET("/relations/get_relations",CORSHandler(GetRelationshipsHandler))
 
+	Router.GET("/search_people",CORSHandler(GetSearchedPeople))
 	fmt.Println("LISTENING ON PORT " + ServePort)
 
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
