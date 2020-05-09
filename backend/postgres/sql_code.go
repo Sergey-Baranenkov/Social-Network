@@ -39,7 +39,10 @@ create table if not exists users (
     edu_and_emp_info jsonb,
 
 	/*music*/
-	music_list bigint[]
+	music_list bigint[],
+	
+	/*video*/
+	video_list bigint[]
 
 ); create index if not exists users_user_id_idx on users (user_id);
 create index if not exists users_full_name_id_idx on users using gin(full_name);
@@ -216,6 +219,29 @@ DROP TRIGGER IF EXISTS update_full_name_trigger ON public.users;
 CREATE TRIGGER update_full_name_trigger
 	BEFORE INSERT OR UPDATE ON users
 FOR EACH ROW EXECUTE PROCEDURE update_full_name ();
+`
+var VideoTable = `
+create table video (
+    video_id bigserial primary key,
+    adder_id bigserial references users(user_id),
+    name text not null default 'undefined',
+    created_at timestamptz default Now(),
+    document tsvector
+); create index video_doc_idx on video using gin(document);
+`
+
+var VideoTriggers = `
+CREATE OR REPLACE FUNCTION  add_video() RETURNS trigger AS $$
+    BEGIN
+        new.document = to_tsvector(new.name);
+       	return new;
+    END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS add_video_trigger ON public.video;
+CREATE TRIGGER add_video_trigger
+	BEFORE INSERT ON video
+FOR EACH ROW EXECUTE PROCEDURE add_video ();
 `
 
 var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$

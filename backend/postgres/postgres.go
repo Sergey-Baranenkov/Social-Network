@@ -36,6 +36,13 @@ func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), RelationsTable); err!=nil{
 		return err
 	}
+	if _, err = rc.Conn.Exec(context.Background(), VideoTable); err!=nil{
+		return err
+	}
+
+	if _, err = rc.Conn.Exec(context.Background(), VideoTriggers); err!=nil{
+		return err
+	}
 
 	if _, err = rc.Conn.Exec(context.Background(), Triggers); err!=nil{
 		return err

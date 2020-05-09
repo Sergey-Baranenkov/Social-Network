@@ -48,6 +48,11 @@ func main() {
 	Router.GET("/relations/get_relations",CORSHandler(GetRelationshipsHandler))
 
 	Router.GET("/search_people",CORSHandler(GetSearchedPeople))
+
+
+	Router.GET("/video/get_user_video", CORSHandler(GetUserVideoHandler))
+	Router.GET("/video/get_combined_video", CORSHandler(GetCombinedVideoHandler))
+
 	fmt.Println("LISTENING ON PORT " + ServePort)
 
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
