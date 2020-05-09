@@ -20,7 +20,7 @@ func main() {
 	Router.GET("/static/*filepath", fasthttp.FSHandler("../frontend", 1))
 	Router.GET("/frontend/*filepath", fasthttp.FSHandler("../frontend", 1))
 
-	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
+
 
 	Router.GET("/posts", CORSHandler(GetPostsHandler))
 
@@ -33,6 +33,7 @@ func main() {
 	Router.GET("/music/get_all_music", CORSHandler(GetAllMusicHandler))
 	Router.POST("/music/post_music", CORSHandler(PostMusicHandler))
 	Router.GET("/music/remove_music", CORSHandler(DeleteMusicHandler))
+	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
 
 	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
 	Router.GET("/settings/privacy", CORSHandler(PrivacyHandler))
@@ -52,7 +53,8 @@ func main() {
 
 	Router.GET("/video/get_user_video", CORSHandler(GetUserVideoHandler))
 	Router.GET("/video/get_combined_video", CORSHandler(GetCombinedVideoHandler))
-
+	Router.POST("/video/post_video", CORSHandler(PostVideoHandler))
+	Router.GET("/video_storage/*filepath", CORSHandler(fasthttp.FSHandler("../video_storage", 1)))
 	fmt.Println("LISTENING ON PORT " + ServePort)
 
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
