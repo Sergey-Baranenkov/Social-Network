@@ -12,18 +12,11 @@ import (
 	"strings"
 )
 
-type VideoJSON struct {
-	UserVideos json.RawMessage
-	AllVideos json.RawMessage
-}
-
-var null = []byte ("null")
-var emptyArray = json.RawMessage("[]")
-
 func GetUserVideoHandler(ctx *fasthttp.RequestCtx){
+	ctx.Response.Header.Set("Content-Type", "application/json")
+
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
-
 	VideoStruct := VideoJSON{json.RawMessage("[]"),json.RawMessage("[]")}
 	query:= "select json_agg(m) from (select video_id, name, adder_id from video where video_id in (select unnest(video_list) from users where user_id = $1 limit 8 offset $2) order by created_at desc ) m;"
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, startFrom).Scan(&VideoStruct.UserVideos);
@@ -31,7 +24,6 @@ func GetUserVideoHandler(ctx *fasthttp.RequestCtx){
 		fmt.Println(err)
 		return
 	}
-	ctx.Response.Header.Set("Content-Type", "application/json")
 	if bytes.Equal(VideoStruct.UserVideos,null){
 		VideoStruct.UserVideos = emptyArray
 	}
@@ -41,6 +33,7 @@ func GetUserVideoHandler(ctx *fasthttp.RequestCtx){
 }
 
 func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
+	ctx.Response.Header.Set("Content-Type", "application/json")
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 	withVal := functools.ByteSliceToString(ctx.QueryArgs().Peek("withVal"))
@@ -70,7 +63,6 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 		}
 	}
 
-	ctx.Response.Header.Set("Content-Type", "application/json")
 	jsonResult, _ := json.Marshal(VideoStruct)
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }

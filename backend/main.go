@@ -30,7 +30,7 @@ func main() {
 	Router.GET("/profile/page_info", CORSHandler(GetProfilePageInfo))
 
 	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
-	Router.GET("/music/get_all_music", CORSHandler(GetAllMusicHandler))
+	Router.GET("/music/get_combined_music", CORSHandler(GetCombinedMusicHandler))
 	Router.POST("/music/post_music", CORSHandler(PostMusicHandler))
 	Router.GET("/music/remove_music", CORSHandler(DeleteMusicHandler))
 	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
@@ -55,8 +55,8 @@ func main() {
 	Router.GET("/video/get_combined_video", CORSHandler(GetCombinedVideoHandler))
 	Router.POST("/video/post_video", CORSHandler(PostVideoHandler))
 	Router.GET("/video_storage/*filepath", CORSHandler(fasthttp.FSHandler("../video_storage", 1)))
-	fmt.Println("LISTENING ON PORT " + ServePort)
 
+	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
 
 	if err := server.ListenAndServe(":"+ServePort); err != nil {

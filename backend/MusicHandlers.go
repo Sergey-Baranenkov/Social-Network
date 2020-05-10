@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"coursework/functools"
+	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -11,39 +13,70 @@ import (
 )
 
 func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
-	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	ctx.Response.Header.Set("Content-Type", "application/json")
-	music := make([]byte, 0, 1024)
-	query:= `select json_agg(m) from (select music_id, name, author, adder_id from music where
-				music_id in (select unnest(music_list) from users where user_id = $1)) m`
+	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&music);
+	AudioStruct := AudioJson{json.RawMessage("[]"),json.RawMessage("[]")}
+	query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
+			 where music_id in (select unnest(music_list) from users where user_id = $1 limit 10 offset $2) order by created_at desc) m`
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, startFrom).Scan(&AudioStruct.UserMusic);
 		err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	_, _ = ctx.WriteString(functools.ByteSliceToString(music))
+	if bytes.Equal(AudioStruct.UserMusic,null){
+		AudioStruct.UserMusic = emptyArray
+	}
+	jsonResult, _ := json.Marshal(AudioStruct)
+	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
+
 }
 
-func GetAllMusicHandler(ctx *fasthttp.RequestCtx){
-	request:= ctx.QueryArgs().Peek("request")
-	limit:= functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
-
+func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	ctx.Response.Header.Set("Content-Type", "application/json")
-	music := make([]byte, 0, 1024)
-	query:= "select json_agg(m) from (select music_id, name, author, adder_id from music where document @@ plainto_tsquery($1) limit $2) m"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, request, limit).Scan(&music);
-		err != nil {
-		fmt.Println(err)
-		return
+	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
+	withVal := functools.ByteSliceToString(ctx.QueryArgs().Peek("withVal"))
+	AudioStruct := AudioJson{json.RawMessage("[]"),json.RawMessage("[]")}
+	count:= 0
+
+	if startFrom == "0" {
+		query:= `select count(*), json_agg(m) from (select music_id, name, author, adder_id from music
+													where music_id in (select unnest(music_list) from users 
+																		where user_id = $1 and document @@ plainto_tsquery($2)) 
+													order by created_at desc ) m;`
+
+		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &AudioStruct.UserMusic); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if bytes.Equal(AudioStruct.UserMusic,null){
+			AudioStruct.UserMusic = emptyArray
+		}
 	}
-	_, _ = ctx.WriteString(functools.ByteSliceToString(music))
+
+	limit:= 10
+	if count < limit {
+		query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
+				 where document @@ plainto_tsquery($1) limit $2 offset $3) m;`
+
+		if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit - count, startFrom).Scan(&AudioStruct.AllMusic); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if bytes.Equal(AudioStruct.AllMusic,null){
+			AudioStruct.AllMusic = emptyArray
+		}
+	}
+
+	jsonResult, _ := json.Marshal(AudioStruct)
+	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
 func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("audio")
-
 	adderId:= 1
 
 	if err != nil {
