@@ -13,4 +13,5 @@ type VideoJSON struct {
 type AudioJson struct {
 	UserMusic json.RawMessage
 	AllMusic json.RawMessage
+	Done bool
 }

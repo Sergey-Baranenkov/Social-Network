@@ -55,7 +55,7 @@ create table if not exists music (
     author text not null default 'undefined',
 	created_at timestamptz default Now(),
     document tsvector
-); create index music_doc_idx on music using gin(document);
+); create index if not exists music_doc_idx on music using gin(document);
 `
 var ObjectsTable = `
 create table if not exists objects(
@@ -84,16 +84,16 @@ create table if not exists relations__friends (
     user_id2 bigint references users(user_id) on delete cascade on update cascade,
     primary key (user_id1, user_id2)
 );
-create index rfr_uid1 on relations__friends(user_id1);
-create index rfr_uid2 on relations__friends(user_id2);
+create index if not exists rfr_uid1 on relations__friends(user_id1);
+create index if not exists rfr_uid2 on relations__friends(user_id2);
 
 create table if not exists relations__subscribers (
     subscriber_id bigint references users(user_id) on delete cascade on update cascade,
     subscribed_id bigint references users(user_id) on delete cascade on update cascade,
     primary key (subscriber_id, subscribed_id)
 );
-create index rsub_uid1 on relations__subscribers(subscriber_id);
-create index rsub_uid2 on relations__subscribers(subscribed_id);
+create index if not exists rsub_uid1 on relations__subscribers(subscriber_id);
+create index if not exists rsub_uid2 on relations__subscribers(subscribed_id);
 `
 var LikesTable = `
 create table if not exists likes(
@@ -221,13 +221,13 @@ CREATE TRIGGER update_full_name_trigger
 FOR EACH ROW EXECUTE PROCEDURE update_full_name ();
 `
 var VideoTable = `
-create table video (
+create table if not exists video (
     video_id bigserial primary key,
     adder_id bigserial references users(user_id),
     name text not null default 'undefined',
     created_at timestamptz default Now(),
     document tsvector
-); create index video_doc_idx on video using gin(document);
+); create index if not exists video_doc_idx on video using gin(document);
 `
 
 var VideoTriggers = `

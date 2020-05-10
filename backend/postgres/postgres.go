@@ -10,9 +10,9 @@ type PGXConnection struct {
 }
 
 func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
-	if _, err = rc.Conn.Exec(context.Background(), DropDB); err!=nil{
-		return err
-	}
+	//if _, err = rc.Conn.Exec(context.Background(), DropDB); err!=nil{
+	//	return err
+	//}
 
 	if _, err = rc.Conn.Exec(context.Background(), "create extension if not exists ltree;"); err!=nil{
 		return err
@@ -53,9 +53,9 @@ func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), FriendsSubscribersFunctions); err!=nil{
 		return err
 	}
-	if _, err = rc.Conn.Exec(context.Background(), InitTestSQL); err!=nil{
-		return err
-	}
+	//if _, err = rc.Conn.Exec(context.Background(), InitTestSQL); err!=nil{
+	//	return err
+	//}
 	return nil
 }
 
