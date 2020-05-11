@@ -19,8 +19,12 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 
 	AudioStruct := AudioJson{emptyArray,emptyArray, false}
-	query:= `select json_agg(to_jsonb(m) - 'document') from (select unnest(music_list) as music_id from users 
-			 where user_id = $1 limit $2 offset $3) as uml inner join music m on uml.music_id = m.music_id;`
+	query:= `select json_agg(m) from 
+                    (select m.music_id, m.adder_id, m.name, m.author from 
+                        (select music_id, ordinality from users, unnest(music_list) with ordinality music_id 
+                             where user_id = $1 limit $2 offset $3) as uml
+                        inner join music m on m.music_id = uml.music_id order by uml.ordinality
+                    ) m ;`
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&AudioStruct.UserMusic);
 		err != nil {
 		fmt.Println(err)
@@ -53,9 +57,12 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	count:= 0
 
 	if startFrom == "0" {
-		query:= `select count(*), json_agg(to_jsonb(m) - 'document') from (select unnest(music_list) as music_id from users where user_id = $1) as uml 
-  				 inner join music m on m.music_id = uml.music_id where document @@ plainto_tsquery($2);
-`
+		query:= `select count(*), json_agg(m) from
+                    (select m.music_id, m.adder_id, m.name, m.author from
+                        (select music_id, ordinality from users, unnest(music_list) with ordinality music_id where user_id = $1) as uml
+                        inner join music m on m.music_id = uml.music_id where document @@ plainto_tsquery($2) order by uml.ordinality
+                    ) m ;
+				`
 
 		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &AudioStruct.UserMusic); err != nil {
 			fmt.Println(err)

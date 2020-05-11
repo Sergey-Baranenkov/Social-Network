@@ -56,6 +56,11 @@ func main() {
 	Router.POST("/video/post_video", CORSHandler(PostVideoHandler))
 	Router.GET("/video_storage/*filepath", CORSHandler(fasthttp.FSHandler("../video_storage", 1)))
 
+	Router.GET ("/gallery/get_images", CORSHandler(GetUserImages))
+	Router.POST("/gallery/post_image", CORSHandler(PostImageHandler))
+	Router.GET("/gallery/delete_image", CORSHandler(DeleteImageHandler))
+	Router.GET("/gallery_storage/*filepath", CORSHandler(fasthttp.FSHandler("../gallery_storage", 1)))
+
 	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
 

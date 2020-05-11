@@ -25,8 +25,9 @@ func GetUserImages(ctx *fasthttp.RequestCtx){
 
 	images:= ImagesStruct{emptyArray, false}
 
-	query:= `select json_agg(to_jsonb(m) - 'document') from (select unnest(music_list) as music_id from users 
-			 where user_id = $1 limit $2 offset $3) as uml inner join music m on uml.music_id = m.music_id;`
+	query:= `select json_agg(i) from (select i.* from (select image_id, ordinality from  users, unnest(images_list) with ordinality image_id 
+														where user_id = $1 limit $2 offset $3) as uil
+    		 inner join images i on i.image_id = uil.image_id order by uil.ordinality) i;`
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&images.ImagesList);
 		err != nil {
 		fmt.Println(err)
@@ -39,6 +40,7 @@ func GetUserImages(ctx *fasthttp.RequestCtx){
 	}
 
 	jsonResult, _ := json.Marshal(images)
+	fmt.Println("kkk", functools.ByteSliceToString(jsonResult))
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
@@ -63,7 +65,7 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 	path := functools.PathFromIdGenerator(strconv.Itoa(imageId))
 
 	sb := strings.Builder{}
-	sb.WriteString("../images_storage")
+	sb.WriteString("../gallery_storage")
 	sb.WriteString(path)
 
 	if err := os.MkdirAll(sb.String(), 0777); err != nil {
@@ -71,7 +73,7 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 		return
 	}
 
-	sb.WriteString("/img.png")
+	sb.WriteString("/img.jpg")
 
 	if err := fasthttp.SaveMultipartFile(f, sb.String()); err != nil {
 		fmt.Println(err)
