@@ -1,3 +1,5 @@
 /.idea/
 /databases/pg
 /music_storage/
+/video_storage/
+/images_storage/

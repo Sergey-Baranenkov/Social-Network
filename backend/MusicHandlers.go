@@ -18,9 +18,9 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 
-	AudioStruct := AudioJson{json.RawMessage("[]"),json.RawMessage("[]"), false}
-	query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
-			 where music_id in (select unnest(music_list) from users where user_id = $1 limit $2 offset $3) order by created_at desc) m`
+	AudioStruct := AudioJson{emptyArray,emptyArray, false}
+	query:= `select json_agg(to_jsonb(m) - 'document') from (select unnest(music_list) as music_id from users 
+			 where user_id = $1 limit $2 offset $3) as uml inner join music m on uml.music_id = m.music_id;`
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&AudioStruct.UserMusic);
 		err != nil {
 		fmt.Println(err)
@@ -34,7 +34,6 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 
 	jsonResult, _ := json.Marshal(AudioStruct)
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
-
 }
 
 func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
@@ -50,14 +49,13 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 		return
 	}
 
-	AudioStruct := AudioJson{json.RawMessage("[]"),json.RawMessage("[]"), false}
+	AudioStruct := AudioJson{emptyArray,emptyArray, false}
 	count:= 0
 
 	if startFrom == "0" {
-		query:= `select count(*), json_agg(m) from (select music_id, name, author, adder_id from music
-													where music_id in (select unnest(music_list) from users where user_id = $1) 
-													and document @@ plainto_tsquery($2) 
-													order by created_at desc ) m;`
+		query:= `select count(*), json_agg(to_jsonb(m) - 'document') from (select unnest(music_list) as music_id from users where user_id = $1) as uml 
+  				 inner join music m on m.music_id = uml.music_id where document @@ plainto_tsquery($2);
+`
 
 		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &AudioStruct.UserMusic); err != nil {
 			fmt.Println(err)
@@ -68,6 +66,7 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 			AudioStruct.UserMusic = emptyArray
 		}
 	}
+
 
 	if count < limit {
 		query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
@@ -126,7 +125,7 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	query = "update users set music_list = array_append(music_list, $1) where user_id = $2"
+	query = "update users set music_list = array_prepend($1, music_list) where user_id = $2"
 	if _, err := Postgres.Conn.Exec(context.Background(), query, musicId, adderId);
 		err != nil {
 		fmt.Println(err)

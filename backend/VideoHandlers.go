@@ -18,7 +18,10 @@ func GetUserVideoHandler(ctx *fasthttp.RequestCtx){
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 	VideoStruct := VideoJSON{json.RawMessage("[]"),json.RawMessage("[]")}
-	query:= "select json_agg(m) from (select video_id, name, adder_id from video where video_id in (select unnest(video_list) from users where user_id = $1 limit 8 offset $2) order by created_at desc ) m;"
+	query:= `
+			select json_agg(to_jsonb(v) - 'document') from (select unnest(video_list) as video_id from users where user_id = $1 limit 8 offset $2) as uvl 
+			inner join video v on uvl.video_id = v.video_id;
+			`
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, startFrom).Scan(&VideoStruct.UserVideos);
 		err != nil {
 		fmt.Println(err)
@@ -37,11 +40,14 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 	withVal := functools.ByteSliceToString(ctx.QueryArgs().Peek("withVal"))
-	VideoStruct := VideoJSON{json.RawMessage("[]"),json.RawMessage("[]")}
+	VideoStruct := VideoJSON{emptyArray,emptyArray}
 	count:= 0
 
 	if startFrom == "0" {
-		query:= "select count(*), json_agg(m) from (select video_id, name, adder_id from video where video_id in (select unnest(video_list) from users where user_id = $1 and document @@ plainto_tsquery($2)) order by created_at desc ) m;"
+		query:= `
+				select count(*), json_agg(to_jsonb(v) - 'document') from (select unnest(video_list) as video_id from users where user_id = $1) as uvl 
+				inner join video v on uvl.video_id = v.video_id where document @@ plainto_tsquery($2);
+			    `
 		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &VideoStruct.UserVideos); err != nil {
 			fmt.Println(err)
 			return
@@ -58,7 +64,7 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 			fmt.Println(err)
 			return
 		}
-		if bytes.Equal(VideoStruct.AllVideos,null){
+		if bytes.Equal(VideoStruct.AllVideos, null){
 			VideoStruct.AllVideos = emptyArray
 		}
 	}
@@ -102,13 +108,26 @@ func PostVideoHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	query = "update users set video_list = array_append(video_list, $1) where user_id = $2"
+	query = "update users set video_list = array_prepend($1, video_list) where user_id = $2"
 	if _, err := Postgres.Conn.Exec(context.Background(), query, videoId, adderId);
 		err != nil {
-		fmt.Println(err)
+		fmt.Println("err??", err)
 		return
 	}
 
 	_, _ = ctx.WriteString(strconv.Itoa(videoId))
 
+}
+
+func DeleteVideoHandler (ctx *fasthttp.RequestCtx){
+	userId := 1
+	videoId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("videoId"))
+
+	query := "update users set video_list = array_remove(video_list, $1) where user_id = $2"
+	if _, err := Postgres.Conn.Exec(context.Background(), query, videoId, userId);
+		err != nil {
+		ctx.Error("нет такого video id", 400)
+		return
+	}
+	ctx.SetStatusCode(200)
 }

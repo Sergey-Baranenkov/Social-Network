@@ -42,8 +42,11 @@ create table if not exists users (
 	music_list bigint[],
 	
 	/*video*/
-	video_list bigint[]
-
+	video_list bigint[],
+	
+	/*images*/
+	images_list bigint[]
+	
 ); create index if not exists users_user_id_idx on users (user_id);
 create index if not exists users_full_name_id_idx on users using gin(full_name);
 `
@@ -53,7 +56,6 @@ create table if not exists music (
     adder_id bigint references users(user_id),
     name text not null default 'undefined',
     author text not null default 'undefined',
-	created_at timestamptz default Now(),
     document tsvector
 ); create index if not exists music_doc_idx on music using gin(document);
 `
@@ -225,7 +227,6 @@ create table if not exists video (
     video_id bigserial primary key,
     adder_id bigserial references users(user_id),
     name text not null default 'undefined',
-    created_at timestamptz default Now(),
     document tsvector
 ); create index if not exists video_doc_idx on video using gin(document);
 `
@@ -244,6 +245,12 @@ CREATE TRIGGER add_video_trigger
 FOR EACH ROW EXECUTE PROCEDURE add_video ();
 `
 
+var ImagesTable = `
+create table images (
+    image_id bigserial,
+    adder_id bigint references users(user_id)
+)
+`
 var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$
         BEGIN
             return (
