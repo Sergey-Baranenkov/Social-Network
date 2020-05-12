@@ -247,7 +247,7 @@ FOR EACH ROW EXECUTE PROCEDURE add_video ();
 
 var ImagesTable = `
 create table images (
-    image_id bigserial,
+    image_id bigserial primary key,
     adder_id bigint references users(user_id)
 )
 `

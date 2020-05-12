@@ -40,7 +40,6 @@ func GetUserImages(ctx *fasthttp.RequestCtx){
 	}
 
 	jsonResult, _ := json.Marshal(images)
-	fmt.Println("kkk", functools.ByteSliceToString(jsonResult))
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
