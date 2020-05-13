@@ -19,6 +19,7 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 
 	AudioStruct := AudioJson{emptyArray,emptyArray, false}
+
 	query:= `select json_agg(m) from 
                     (select m.music_id, m.adder_id, m.name, m.author from 
                         (select music_id, ordinality from users, unnest(music_list) with ordinality music_id 

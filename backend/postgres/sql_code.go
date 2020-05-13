@@ -257,22 +257,27 @@ var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) R
 select json_agg(res)
     from (
             WITH RECURSIVE
+
                 c AS (
                     SELECT text,
                            num_likes,
-                           path,
-                           exists (select 1 from likes where likes.path = objects.path) as me_liked,
+                           o.path,
+                           l2 is not null as me_liked,
                            first_name,
                            last_name,
                            to_char(creation_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as creation_time,
                            to_char(modification_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as modification_time,
-                           nlevel(path) AS lvl
-                    FROM objects join users on user_id = auth_id where path <@ text2ltree(post_path)
+                           nlevel(o.path) AS lvl
+                    FROM objects o inner join users on user_id = auth_id
+                                   left join likes l2 on o.path = l2.path
+                    where o.path <@ text2ltree('1')
                 ),
+
                 maxlvl AS (
                     SELECT max(lvl) maxlvl
                     FROM c
                 ),
+
                 j AS (
                     SELECT c.*,
                            json '[]' AS children
@@ -299,7 +304,7 @@ select json_agg(res)
                 )
             SELECT *
             FROM j
-            WHERE lvl = 2
+			where lvl = 2
         ) res
                 );
         end;
@@ -310,19 +315,21 @@ CREATE OR REPLACE FUNCTION get_posts(u_id bigint, my_id bigint) returns json as 
         begin
             return
                 (
-select array_to_json(array_agg(row_to_json(t)))
-    from (
+select json_agg(t) from (
       select o.text,
              o.path,
              o.num_likes,
-             exists (select 1 from likes where o.path = likes.path and likes.auth_id = my_id) as me_liked,
              to_char(o.creation_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as creation_time,
              to_char(o.modification_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as modification_time,
              first_name,
              last_name,
-             num_comments
-
-      from objects o join users u on u.user_id = o.auth_id join post_info pi on o.path = pi.path where o.auth_id = u_id
+             num_comments,
+             l is not null as me_liked
+      from objects o
+          inner join users u on u.user_id = o.auth_id
+          inner join post_info pi on o.path = pi.path
+          left join likes l on o.path = l.path and l.auth_id = 1
+      where o.auth_id = 1
     ) t
         );
         end;
@@ -374,6 +381,7 @@ insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '', 'lol');
 insert into objects (auth_id, path, text) values (1, '1','lol');
+insert into objects (auth_id, path, text) values (1, '1.1','lol');
 
 insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);

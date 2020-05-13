@@ -26,7 +26,7 @@ func main() {
 
 	Router.GET("/profile/get_comments", CORSHandler(CommentsTestHandler))
 	Router.POST("/profile/leave_comment", CORSHandler(AddCommentHandler))
-	Router.POST("/profile/like", CORSHandler(LikeHandler))
+	Router.POST("/profile/update_like", CORSHandler(UpdateLikeHandler))
 	Router.GET("/profile/page_info", CORSHandler(GetProfilePageInfo))
 
 	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
