@@ -74,8 +74,7 @@ create index if not exists object_auth_id_idx on objects (auth_id);
 var PostInfoTable = `
 create table if not exists post_info(
     path ltree primary key references objects (path) on delete cascade ,
-    num_comments integer default 0 not null,
-    ref_id bigint
+    num_comments integer default 0 not null
 ); create index if not exists post_obj_id_idx on post_info using gist(path);
 create sequence if not exists num_posts;
 `
@@ -270,7 +269,7 @@ select json_agg(res)
                            nlevel(o.path) AS lvl
                     FROM objects o inner join users on user_id = auth_id
                                    left join likes l2 on o.path = l2.path
-                    where o.path <@ text2ltree('1')
+                    where o.path <@ text2ltree(post_path) order by o.creation_time desc
                 ),
 
                 maxlvl AS (
@@ -329,7 +328,7 @@ select json_agg(t) from (
           inner join users u on u.user_id = o.auth_id
           inner join post_info pi on o.path = pi.path
           left join likes l on o.path = l.path and l.auth_id = 1
-      where o.auth_id = 1
+      where o.auth_id = 1 order by o.creation_time desc
     ) t
         );
         end;

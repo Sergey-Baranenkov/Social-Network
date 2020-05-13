@@ -18,10 +18,23 @@ func GetPostsHandler(ctx *fasthttp.RequestCtx) {
 	_, _ = ctx.WriteString(posts)
 }
 
+func AddNewObjectHandler(ctx * fasthttp.RequestCtx){
+	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
+	text := functools.ByteSliceToString(ctx.QueryArgs().Peek("text"))
+	authId := "1"
+
+	if err := Postgres.Conn.QueryRow(context.Background(),
+		"insert into objects (auth_id, path, text) values ($1, $2, $3) returning path", authId, path, text).Scan(&path);
+	err != nil {
+		fmt.Println("Error:", err)
+		ctx.SetStatusCode(400)
+		return
+	}
+	_, _ = ctx.WriteString(path)
+}
+
 func CommentsTestHandler(ctx *fasthttp.RequestCtx) {
-	path := ctx.QueryArgs().Peek("path")
-	limit := ctx.QueryArgs().Peek("lim")
-	fmt.Println(limit, path)
+	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	var comments = make([]byte, 0, 1024)
 	if err := Postgres.Conn.QueryRow(context.Background(),
@@ -32,23 +45,21 @@ func CommentsTestHandler(ctx *fasthttp.RequestCtx) {
 	_, _ = ctx.WriteString(functools.ByteSliceToString(comments))
 }
 
-var revokeLike = "revoke"
-var setLike = "set"
-
 func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
 	authId := "1" //fix
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	option := functools.ByteSliceToString(ctx.QueryArgs().Peek("meLiked"))
-	if option == setLike {
+	fmt.Println(path)
+	if option == "false" {
 		if _, err := Postgres.Conn.Exec(context.Background(),
 			"insert into likes(path,auth_id) values($1,$2)", path, authId); err != nil {
 			fmt.Println("Error:", err)
 			ctx.SetStatusCode(400)
 			return
 		}
-	} else if option == revokeLike {
+	} else if option == "true" {
 		if _, err := Postgres.Conn.Exec(context.Background(),
-			"delete from likes(path,auth_id) values($1,$2)", path, authId); err != nil {
+			"delete from likes where path = $1 and auth_id = $2", path, authId); err != nil {
 			fmt.Println("Error:", err)
 			ctx.SetStatusCode(400)
 			return
@@ -56,17 +67,6 @@ func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
 	}
 	ctx.SetStatusCode(200)
 
-}
-
-func AddCommentHandler(ctx *fasthttp.RequestCtx) {
-	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
-	authId := "1"
-	message := "Hello world"
-	if _, err := Postgres.Conn.Exec(context.Background(),
-		"insert into objects (auth_id, text, path) values ($1, $2, $3);", authId, message, path); err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
 }
 
 func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
