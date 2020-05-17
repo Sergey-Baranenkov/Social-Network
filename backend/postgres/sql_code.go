@@ -419,7 +419,6 @@ create or replace function select_last_conversations_for_user(_user_id bigint, _
         j as (
             select m.* from t
                 inner join messages m on m.conversation_id = t.conversation_id and m.created_at = t.last_message_time
-            limit 1
         )
         select json_agg(j) from j into json_res;
 
@@ -486,13 +485,13 @@ $$ language plpgsql;
 create or replace function push_message_to_unknown_conversation(_message_from bigint, _message_to bigint, _message_text text) returns bigint as $$
     declare min bigint := _message_from;
     declare max bigint := _message_to;
-    declare _conversation_id bigint :=  check_conversation_exists(min, max);
+    declare _conversation_id bigint;
     begin
         if _message_from > _message_to then
             min = _message_to;
             max = _message_from;
         end if;
-
+        _conversation_id = check_conversation_exists(min, max);
         if _conversation_id is null then
             insert into conversation (user_1, user_2) values (min, max) returning conversation_id into _conversation_id;
         end if;
