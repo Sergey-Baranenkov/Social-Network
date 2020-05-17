@@ -33,7 +33,7 @@ func AddNewObjectHandler(ctx * fasthttp.RequestCtx){
 	_, _ = ctx.WriteString(path)
 }
 
-func CommentsTestHandler(ctx *fasthttp.RequestCtx) {
+func GetCommentsHandler(ctx *fasthttp.RequestCtx) {
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	var comments = make([]byte, 0, 1024)

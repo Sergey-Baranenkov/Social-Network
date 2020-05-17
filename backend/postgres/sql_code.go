@@ -385,5 +385,128 @@ insert into objects (auth_id, path, text) values (1, '1.1','lol');
 insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);
 insert into likes (path, auth_id) values ('2', 1);
+`
+var MessagesTables = `
+create table if not exists conversation (
+    conversation_id bigserial primary key,
+    user_1 bigint references users(user_id),
+    user_2 bigint references users(user_id),
+    last_message_time timestamptz,
+    check ( user_1 <= user_2 )
+); create index user_both_idx on conversation(user_1, user_2);
+   create index user_1_idx on conversation(user_1);
+   create index user_2_idx on conversation(user_2);
 
+
+create table if not exists messages (
+    conversation_id bigint references conversation(conversation_id),
+    message_from bigint references users(user_id),
+    message_text text,
+    created_at timestamptz default now()
+); create index conversation_id_idx on messages(conversation_id);
+`
+var MessagesFunctions = `
+-- поиск последних бесед и последнее сообщение оттуда
+create or replace function select_last_conversations_for_user(_user_id bigint, _limit bigint, _offset bigint) returns json as $$
+    declare json_res json;
+    begin
+        with t as (
+            select conversation_id, last_message_time from conversation
+                where user_1 = _user_id or user_2 = _user_id order by last_message_time desc
+            limit _limit offset _offset
+        ),
+
+        j as (
+            select m.* from t
+                inner join messages m on m.conversation_id = t.conversation_id and m.created_at = t.last_message_time
+            limit 1
+        )
+        select json_agg(j) from j into json_res;
+
+        return json_res;
+    end;
+$$ language plpgsql;
+
+
+
+create or replace function on_insert_message_function() returns trigger as $$
+    begin
+        update conversation set last_message_time = new.created_at where conversation_id =  new.conversation_id;
+        return new;
+    end;
+$$ language plpgsql;
+create trigger on_insert_message_trigger after insert on messages
+    for row
+execute procedure on_insert_message_function();
+
+
+
+-- выбор для определенной беседы (быстрый)
+create or replace function select_conversation_messages(_user_1 bigint, _user_2 bigint) returns json as $$
+    declare min bigint := _user_1;
+    declare max bigint := _user_2;
+
+    declare _conversation_id bigint;
+    declare json_res json;
+    begin
+        if _user_1 > _user_2 then
+            min = _user_2;
+            max = _user_1;
+        end if;
+        _conversation_id =  check_conversation_exists(min, max);
+
+        if _conversation_id is not null then
+            select json_agg(m) from messages m where m.conversation_id = _conversation_id into json_res;
+            return json_res;
+        else
+            return null;
+        end if;
+    end;
+$$ language plpgsql;
+
+
+create or replace function select_conversation_messages(_conversation_id bigint) returns json as $$
+    declare json_res json;
+    begin
+        select json_agg(m) from messages m where m.conversation_id = _conversation_id into json_res;
+        return json_res;
+    end;
+$$ language plpgsql;
+
+
+create or replace function check_conversation_exists (_user_1 bigint, _user_2 bigint) returns bigint as $$
+    declare res bigint;
+    begin
+         select conversation_id from conversation where user_1 = _user_1 and user_2 = _user_2 limit 1 into res;
+         return res;
+    end;
+$$ language plpgsql;
+
+
+create or replace function push_message_to_unknown_conversation(_message_from bigint, _message_to bigint, _message_text text) returns bigint as $$
+    declare min bigint := _message_from;
+    declare max bigint := _message_to;
+    declare _conversation_id bigint :=  check_conversation_exists(min, max);
+    begin
+        if _message_from > _message_to then
+            min = _message_to;
+            max = _message_from;
+        end if;
+
+        if _conversation_id is null then
+            insert into conversation (user_1, user_2) values (min, max) returning conversation_id into _conversation_id;
+        end if;
+
+        perform push_message_to_known_conversation(_conversation_id, _message_from, _message_text);
+        return _conversation_id;
+    end;
+$$ language plpgsql;
+
+
+create or replace function push_message_to_known_conversation(_conversation_id bigint, _message_from bigint, _message_text text) returns void as $$
+    begin
+        insert into messages (conversation_id, message_from, message_text)
+        values (_conversation_id, _message_from, _message_text);
+    end;
+$$ language plpgsql;
 `

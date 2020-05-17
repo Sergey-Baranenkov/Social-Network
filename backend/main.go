@@ -20,11 +20,8 @@ func main() {
 	Router.GET("/static/*filepath", fasthttp.FSHandler("../frontend", 1))
 	Router.GET("/frontend/*filepath", fasthttp.FSHandler("../frontend", 1))
 
-
-
-	Router.GET("/posts", CORSHandler(GetPostsHandler))
-
-	Router.GET("/profile/get_comments", CORSHandler(CommentsTestHandler))
+	Router.GET("/profile/posts", CORSHandler(GetPostsHandler))
+	Router.GET("/profile/get_comments", CORSHandler(GetCommentsHandler))
 	Router.POST("/profile/add_new_object",CORSHandler(AddNewObjectHandler))
 	Router.POST("/profile/update_like", CORSHandler(UpdateLikeHandler))
 	Router.GET("/profile/page_info", CORSHandler(GetProfilePageInfo))
