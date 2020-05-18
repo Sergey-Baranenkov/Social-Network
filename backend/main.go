@@ -5,8 +5,11 @@ import (
 	"github.com/lab259/cors"
 	"github.com/valyala/fasthttp"
 	"log"
+	"coursework/websocketConnectionsMap"
 )
 
+var MessengerWebsocketStruct = websocketConnectionsMap.CreateWebsocketConnections()
+	
 func main() {
 	if err := Initializer(); err != nil {
 		log.Fatal("Провалена инициализация: ", err)
@@ -58,13 +61,18 @@ func main() {
 	Router.GET("/gallery/delete_image", CORSHandler(DeleteImageHandler))
 	Router.GET("/gallery_storage/*filepath", CORSHandler(fasthttp.FSHandler("../gallery_storage", 1)))
 
+	Router.GET("/messenger/conversation_list", CORSHandler(SelectConversationsList))
+	Router.GET("/messenger/conversation_messages", CORSHandler(SelectConversationMessages))
+	Router.POST("/messenger/push_message", CORSHandler(PushMessage))
+	Router.GET("/messenger", CORSHandler(MessengerHandler))
+
 	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
 
 	if err := server.ListenAndServe(":"+ServePort); err != nil {
 		log.Println("error when starting server: " + err.Error())
 	}
-	Postgres.Conn.Close();
+	Postgres.Conn.Close()
 	if err := Redis.Close(); err != nil {
 		log.Println("error when closing Redis conn: " + err.Error())
 	}

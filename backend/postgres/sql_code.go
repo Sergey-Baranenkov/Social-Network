@@ -375,6 +375,7 @@ $$ language plpgsql;
 var InitTestSQL = `
 insert into users (email, token, first_name, last_name, sex) values ('baranenkovs@mail.ru', E'\a','Vladimir','Putin', 'М');
 insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', E'\a','Sergey','Baranenkov', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru', E'\a','Jury','Dud', 'М');
 
 insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '','lol');
@@ -385,13 +386,18 @@ insert into objects (auth_id, path, text) values (1, '1.1','lol');
 insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);
 insert into likes (path, auth_id) values ('2', 1);
+select push_message(1,2,'lol1');
+select push_message(2,1,'lol2');
+select push_message(1,2,'lol3');
+select push_message(1,3,'lol4');
 `
 var MessagesTables = `
 create table if not exists conversation (
     conversation_id bigserial primary key,
     user_1 bigint references users(user_id),
     user_2 bigint references users(user_id),
-    last_message_time timestamptz,
+    last_message_id bigint,
+    last_message_time timestamptz
     check ( user_1 <= user_2 )
 ); create index user_both_idx on conversation(user_1, user_2);
    create index user_1_idx on conversation(user_1);
@@ -399,27 +405,29 @@ create table if not exists conversation (
 
 
 create table if not exists messages (
+    message_id bigserial primary key,
     conversation_id bigint references conversation(conversation_id),
     message_from bigint references users(user_id),
     message_text text,
     created_at timestamptz default now()
 ); create index conversation_id_idx on messages(conversation_id);
+   create index messages_created_at_idx on messages(created_at desc);
 `
 var MessagesFunctions = `
 -- поиск последних бесед и последнее сообщение оттуда
-create or replace function select_last_conversations_for_user(_user_id bigint, _limit bigint, _offset bigint) returns json as $$
+create or replace function select_conversations_list(_user_id bigint, _limit bigint, _offset bigint) returns json as $$
     declare json_res json;
     begin
         with t as (
-            select conversation_id, last_message_time, u.first_name, u.last_name
+            select conversation_id, last_message_id, u.first_name, u.last_name, u.avatar_ref, u.user_id as partner_id
                 from conversation inner join users u on (case when user_1 = _user_id then user_2 else user_1 end) = u.user_id
             where user_1 = _user_id or user_2 = _user_id
             order by last_message_time desc limit _limit offset _offset
         ),
 
         j as (
-            select m.*, first_name, last_name from t
-                inner join messages m on m.conversation_id = t.conversation_id and m.created_at = t.last_message_time
+            select m.message_id, m.message_from, m.message_text, t.partner_id, t.avatar_ref, t.first_name, t.last_name from t
+                inner join messages m on m.conversation_id = t.conversation_id and m.message_id = t.last_message_id
         )
         select json_agg(j) from j into json_res;
 
@@ -431,7 +439,8 @@ $$ language plpgsql;
 
 create or replace function on_insert_message_function() returns trigger as $$
     begin
-        update conversation set last_message_time = new.created_at where conversation_id =  new.conversation_id;
+        update conversation set last_message_time = new.created_at, last_message_id = new.message_id
+            where conversation_id =  new.conversation_id;
         return new;
     end;
 $$ language plpgsql;
@@ -456,20 +465,14 @@ create or replace function select_conversation_messages(_user_1 bigint, _user_2 
         _conversation_id =  check_conversation_exists(min, max);
 
         if _conversation_id is not null then
-            select json_agg(m) from messages m where m.conversation_id = _conversation_id into json_res;
+            select json_agg(t) from (select m.message_id, m.message_from, m.message_text
+                from messages m where m.conversation_id = _conversation_id
+            order by m.created_at asc) t
+            into json_res;
             return json_res;
         else
             return null;
         end if;
-    end;
-$$ language plpgsql;
-
-
-create or replace function select_conversation_messages(_conversation_id bigint) returns json as $$
-    declare json_res json;
-    begin
-        select json_agg(m) from messages m where m.conversation_id = _conversation_id into json_res;
-        return json_res;
     end;
 $$ language plpgsql;
 
@@ -483,10 +486,11 @@ create or replace function check_conversation_exists (_user_1 bigint, _user_2 bi
 $$ language plpgsql;
 
 
-create or replace function push_message_to_unknown_conversation(_message_from bigint, _message_to bigint, _message_text text) returns bigint as $$
+create or replace function push_message(_message_from bigint, _message_to bigint, _message_text text) returns json as $$
     declare min bigint := _message_from;
     declare max bigint := _message_to;
     declare _conversation_id bigint;
+    declare result json;
     begin
         if _message_from > _message_to then
             min = _message_to;
@@ -496,17 +500,12 @@ create or replace function push_message_to_unknown_conversation(_message_from bi
         if _conversation_id is null then
             insert into conversation (user_1, user_2) values (min, max) returning conversation_id into _conversation_id;
         end if;
-
-        perform push_message_to_known_conversation(_conversation_id, _message_from, _message_text);
-        return _conversation_id;
-    end;
-$$ language plpgsql;
-
-
-create or replace function push_message_to_known_conversation(_conversation_id bigint, _message_from bigint, _message_text text) returns void as $$
-    begin
         insert into messages (conversation_id, message_from, message_text)
-        values (_conversation_id, _message_from, _message_text);
+        values (_conversation_id, _message_from, _message_text)
+        returning json_build_object('message_id',message_id, 'message_from', message_from, 'message_text',message_text) into result;
+        return result;
     end;
 $$ language plpgsql;
+
+
 `
