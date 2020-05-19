@@ -250,10 +250,10 @@ create table images (
     adder_id bigint references users(user_id)
 )
 `
-var SelectFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$
+var SelectPostsCommentsFunctions = `CREATE OR REPLACE FUNCTION get_comments(post_path text) RETURNS json AS $$
         BEGIN
             return (
-select json_agg(res)
+select json_agg(to_jsonb(res) - 'lvl')
     from (
             WITH RECURSIVE
 
@@ -332,7 +332,18 @@ select json_agg(t) from (
     ) t
         );
         end;
-    $$ PARALLEL SAFE LANGUAGE plpgsql;`
+    $$ PARALLEL SAFE LANGUAGE plpgsql;
+
+create or replace function push_object(_auth_id bigint, _path ltree, _text text) returns json as $$
+    declare result json;
+    begin
+       insert into objects (auth_id, path, text) values (_auth_id, _path, _text) 
+       returning json_build_object('creation_time', to_char(creation_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI'), 'path', path) into result;
+       return result;
+    end;
+$$ language plpgsql;
+
+`
 
 var FriendsSubscribersFunctions = `
 create or replace function add_subscriber_to_friend(param_subscribed_id bigint, param_subscriber_id bigint) returns void AS $$

@@ -51,7 +51,7 @@ func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 	if _, err = rc.Conn.Exec(context.Background(), Triggers); err!=nil{
 		return err
 	}
-	if _, err = rc.Conn.Exec(context.Background(), SelectFunctions); err!=nil{
+	if _, err = rc.Conn.Exec(context.Background(), SelectPostsCommentsFunctions); err!=nil{
 		return err
 	}
 	if _, err = rc.Conn.Exec(context.Background(), FriendsSubscribersFunctions); err!=nil{

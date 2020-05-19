@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"coursework/functools"
+	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 )
@@ -23,14 +24,16 @@ func AddNewObjectHandler(ctx * fasthttp.RequestCtx){
 	text := functools.ByteSliceToString(ctx.QueryArgs().Peek("text"))
 	authId := "1"
 
+	var result json.RawMessage
 	if err := Postgres.Conn.QueryRow(context.Background(),
-		"insert into objects (auth_id, path, text) values ($1, $2, $3) returning path", authId, path, text).Scan(&path);
+		"select push_object($1,$2,$3)", authId, path, text).Scan(&result);
 	err != nil {
 		fmt.Println("Error:", err)
 		ctx.SetStatusCode(400)
 		return
 	}
-	_, _ = ctx.WriteString(path)
+
+	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
 
 func GetCommentsHandler(ctx *fasthttp.RequestCtx) {
@@ -49,7 +52,6 @@ func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
 	authId := "1" //fix
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	option := functools.ByteSliceToString(ctx.QueryArgs().Peek("meLiked"))
-	fmt.Println(path)
 	if option == "false" {
 		if _, err := Postgres.Conn.Exec(context.Background(),
 			"insert into likes(path,auth_id) values($1,$2)", path, authId); err != nil {
