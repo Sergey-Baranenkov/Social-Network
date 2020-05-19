@@ -419,7 +419,7 @@ create or replace function select_conversations_list(_user_id bigint, _limit big
     declare json_res json;
     begin
         with t as (
-            select conversation_id, last_message_id, u.first_name, u.last_name, u.avatar_ref, u.user_id as partner_id
+            select conversation_id, last_message_id, last_message_time, u.first_name, u.last_name, u.avatar_ref, u.user_id as partner_id
                 from conversation inner join users u on (case when user_1 = _user_id then user_2 else user_1 end) = u.user_id
             where user_1 = _user_id or user_2 = _user_id
             order by last_message_time desc limit _limit offset _offset
@@ -427,7 +427,7 @@ create or replace function select_conversations_list(_user_id bigint, _limit big
 
         j as (
             select m.message_from, m.message_text, t.partner_id, t.avatar_ref, t.first_name, t.last_name, t.conversation_id from t
-                inner join messages m on m.conversation_id = t.conversation_id and m.message_id = t.last_message_id
+                inner join messages m on m.conversation_id = t.conversation_id and m.message_id = t.last_message_id order by last_message_time desc
         )
         select json_agg(j) from j into json_res;
 
