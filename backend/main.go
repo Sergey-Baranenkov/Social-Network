@@ -64,7 +64,8 @@ func main() {
 	Router.GET("/messenger/conversation_list", CORSHandler(SelectConversationsList))
 	Router.GET("/messenger/conversation_messages", CORSHandler(SelectConversationMessages))
 	Router.POST("/messenger/push_message", CORSHandler(PushMessage))
-	Router.GET("/messenger", CORSHandler(MessengerHandler))
+	Router.GET("/messenger/", CORSHandler(MessengerHandler))
+	Router.GET("/messenger/get_short_profile_info", CORSHandler(MessengerGetShortProfileInfo))
 
 	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}

@@ -38,16 +38,11 @@ func (c *WebsocketConnections) AddConn(userId int, connToAdd *websocket.Conn) {
 	c.mu.Unlock()
 }
 
-func (c *WebsocketConnections) PushMessageToConnections(messageFrom, messageTo int, message json.RawMessage) {
+func (c *WebsocketConnections) PushMessageToConnections(messageTo int, message json.RawMessage) {
 	c.mu.RLock()
-	for _, conn := range c.connMap[messageFrom]{
-		_ = conn.WriteJSON(message)
-	}
-
 	for _, conn := range c.connMap[messageTo]{
 		_ = conn.WriteJSON(message)
 	}
-
 	c.mu.RUnlock()
 }
 

@@ -426,7 +426,7 @@ create or replace function select_conversations_list(_user_id bigint, _limit big
         ),
 
         j as (
-            select m.message_id, m.message_from, m.message_text, t.partner_id, t.avatar_ref, t.first_name, t.last_name from t
+            select m.message_from, m.message_text, t.partner_id, t.avatar_ref, t.first_name, t.last_name, t.conversation_id from t
                 inner join messages m on m.conversation_id = t.conversation_id and m.message_id = t.last_message_id
         )
         select json_agg(j) from j into json_res;
@@ -465,9 +465,9 @@ create or replace function select_conversation_messages(_user_1 bigint, _user_2 
         _conversation_id =  check_conversation_exists(min, max);
 
         if _conversation_id is not null then
-            select json_agg(t) from (select m.message_id, m.message_from, m.message_text
+            select json_build_object('conversation_id', _conversation_id,'messages', json_agg(t)) from (select m.message_id, m.message_from, m.message_text
                 from messages m where m.conversation_id = _conversation_id
-            order by m.created_at asc) t
+            order by m.created_at) t
             into json_res;
             return json_res;
         else
@@ -502,10 +502,18 @@ create or replace function push_message(_message_from bigint, _message_to bigint
         end if;
         insert into messages (conversation_id, message_from, message_text)
         values (_conversation_id, _message_from, _message_text)
-        returning json_build_object('message_id',message_id, 'message_from', message_from, 'message_text',message_text) into result;
+        returning json_build_object('message_id',message_id, 'message_from', message_from, 'message_text',message_text, 'conversation_id', conversation_id) into result;
         return result;
     end;
 $$ language plpgsql;
 
-
+create or replace function get_short_profile_info(_conversation_id bigint, fetcher_id bigint) returns json as $$
+    declare result json;
+    begin
+       select json_build_object('partner_id', user_id, 'first_name',first_name,'last_name',last_name,'avatar_ref',avatar_ref)
+        from conversation inner join users u on (case when user_1 = fetcher_id then user_2 else user_1 end) = u.user_id
+       where conversation_id = _conversation_id into result;
+       return result;
+    end;
+$$ language plpgsql;
 `

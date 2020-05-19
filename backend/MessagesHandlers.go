@@ -30,6 +30,7 @@ func SelectConversationsList (ctx *fasthttp.RequestCtx){
 	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
 
+
 func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 	userId1 := 1
 	userId2 := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId2"))
@@ -44,11 +45,13 @@ func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 	if bytes.Equal(result, null){
 		result = emptyArray
 	}
+
 	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
 
 func PushMessage (ctx *fasthttp.RequestCtx){
 	messageFrom := 1
+	fmt.Println(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
 	messageTo, err := strconv.Atoi(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
 	if err != nil{
 		ctx.Error("параметры не верны", 400)
@@ -63,12 +66,15 @@ func PushMessage (ctx *fasthttp.RequestCtx){
 		ctx.Error("параметры не верны", 400)
 		return
 	}
-	MessengerWebsocketStruct.PushMessageToConnections(messageFrom, messageTo, result)
+	MessengerWebsocketStruct.PushMessageToConnections(messageTo, result)
+	if  messageTo != messageFrom{
+		MessengerWebsocketStruct.PushMessageToConnections(messageFrom, result)
+	}
+
 	ctx.SetStatusCode(400)
 }
 
 var upgrader = websocket.FastHTTPUpgrader{CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true}}
-
 func MessengerHandler (ctx *fasthttp.RequestCtx){
 	userId := 1
 	err := upgrader.Upgrade(ctx, func(wconn *websocket.Conn){
@@ -88,4 +94,19 @@ func MessengerHandler (ctx *fasthttp.RequestCtx){
 	if err != nil{
 		fmt.Println("cannot establish upgrade connection")
 	}
+}
+
+func MessengerGetShortProfileInfo(ctx *fasthttp.RequestCtx){
+	userId := 1
+	conversationId := functools.ByteSliceToString(ctx.QueryArgs().Peek("conversationId"))
+
+	var result json.RawMessage
+	query := "select get_short_profile_info($1, $2)"
+	if err := Postgres.Conn.QueryRow(context.Background(), query, conversationId, userId).Scan(&result);
+		err != nil {
+		ctx.Error("параметры не верны", 400)
+		return
+	}
+
+	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
