@@ -148,18 +148,12 @@ func HobbiesHandler(ctx *fasthttp.RequestCtx) {
 							}`))
 }
 
-func PrivacyHandler(ctx *fasthttp.RequestCtx) {
-	ctx.Response.Header.Set("Content-Type", "application/json")
-	_, _ = ctx.Write([]byte(`{"can_m":"Все",
-							  "has_access": "Только друзья",
-						      "sound_n": false
-							}`))
-}
 
 func EduEmpHandler(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	_, _ = ctx.Write([]byte(`{"data": [
 										{"title": "a", "period": "b", "description": "c"},
 										{"title": "d", "period": "e", "description": "f"}
-]}`))
+										]
+							  }`))
 }

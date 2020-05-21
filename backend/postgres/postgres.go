@@ -65,6 +65,10 @@ func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
 		return err
 	}
 
+	if _, err = rc.Conn.Exec(context.Background(), AboutMeFunctions); err!=nil{
+		return err
+	}
+
 	if _, err = rc.Conn.Exec(context.Background(), InitTestSQL); err!=nil{
 		return err
 	}

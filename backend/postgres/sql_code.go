@@ -528,3 +528,15 @@ create or replace function get_short_profile_info(_conversation_id bigint, fetch
     end;
 $$ language plpgsql;
 `
+
+var AboutMeFunctions = `
+CREATE OR REPLACE FUNCTION  get_extended_info(_user_id bigint) RETURNS json AS $$
+    declare result json;
+    BEGIN
+        select to_json(k) from (select first_name, last_name, sex, tel, city, country, birthday, status,
+               hobby, fav_music, fav_films, fav_books, fav_games, other_interests, edu_and_emp_info from users
+        where users.user_id = _user_id) k into result;
+        return result;
+    END;
+$$ LANGUAGE plpgsql;
+`

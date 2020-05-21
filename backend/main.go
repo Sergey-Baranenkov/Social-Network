@@ -32,11 +32,11 @@ func main() {
 	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
 	Router.GET("/music/get_combined_music", CORSHandler(GetCombinedMusicHandler))
 	Router.POST("/music/post_music", CORSHandler(PostMusicHandler))
+	Router.POST("/music/add_to_playlist",CORSHandler(AddMusicToPlayList))
 	Router.GET("/music/remove_music", CORSHandler(DeleteMusicHandler))
 	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
 
 	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
-	Router.GET("/settings/privacy", CORSHandler(PrivacyHandler))
 	Router.GET("/settings/edu_emp", CORSHandler(EduEmpHandler))
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
@@ -49,7 +49,6 @@ func main() {
 	Router.GET("/relations/get_relations",CORSHandler(GetRelationshipsHandler))
 
 	Router.GET("/search_people",CORSHandler(GetSearchedPeople))
-
 
 	Router.GET("/video/get_user_video", CORSHandler(GetUserVideoHandler))
 	Router.GET("/video/get_combined_video", CORSHandler(GetCombinedVideoHandler))
@@ -66,6 +65,8 @@ func main() {
 	Router.POST("/messenger/push_message", CORSHandler(PushMessage))
 	Router.GET("/messenger/", CORSHandler(MessengerHandler))
 	Router.GET("/messenger/get_short_profile_info", CORSHandler(MessengerGetShortProfileInfo))
+
+	Router.GET("/about_me/select_extended_user_info",CORSHandler(SelectExtendedUserInfo))
 
 	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}

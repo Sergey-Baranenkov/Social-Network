@@ -15,7 +15,7 @@ import (
 func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
-	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
+	offset:= functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 
 	AudioStruct := AudioJson{emptyArray,emptyArray, false}
@@ -26,7 +26,7 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
                              where user_id = $1 limit $2 offset $3) as uml
                         inner join music m on m.music_id = uml.music_id order by uml.ordinality
                     ) m ;`
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&AudioStruct.UserMusic);
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, offset).Scan(&AudioStruct.UserMusic);
 		err != nil {
 		fmt.Println(err)
 		return
@@ -45,7 +45,7 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	fmt.Println("vovovoo")
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
-	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
+	offset:= functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
 	withVal := functools.ByteSliceToString(ctx.QueryArgs().Peek("withValue"))
 	limit, err := strconv.Atoi(functools.ByteSliceToString(ctx.QueryArgs().Peek("limit")))
 
@@ -57,7 +57,7 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	AudioStruct := AudioJson{emptyArray,emptyArray, false}
 	count:= 0
 
-	if startFrom == "0" {
+	if offset == "0" {
 		query:= `select count(*), json_agg(m) from
                     (select m.music_id, m.adder_id, m.name, m.author from
                         (select music_id, ordinality from users, unnest(music_list) with ordinality music_id where user_id = $1) as uml
@@ -80,7 +80,7 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 		query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
 				 where document @@ plainto_tsquery($1) limit $2 offset $3) m;`
 
-		if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit - count, startFrom).Scan(&AudioStruct.AllMusic); err != nil {
+		if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit - count, offset).Scan(&AudioStruct.AllMusic); err != nil {
 			fmt.Println(err)
 			ctx.SetStatusCode(400)
 			return
@@ -92,14 +92,14 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	}
 
 	jsonResult, _ := json.Marshal(AudioStruct)
-	fmt.Println(userId,startFrom,withVal,limit, functools.ByteSliceToString(jsonResult))
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
-	fmt.Println("vovoend")
 }
 
 func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("audio")
 	adderId:= 1
+	author:= functools.ByteSliceToString(ctx.QueryArgs().Peek("author"))
+	title:= functools.ByteSliceToString(ctx.QueryArgs().Peek("title"))
 
 	if err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
@@ -108,8 +108,8 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	}
 
 	musicId := 0
-	query:= "insert into music (adder_id) values ($1) returning music_id"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, adderId).Scan(&musicId);
+	query:= "insert into music (adder_id, name, author) values ($1,$2,$3) returning music_id"
+	if err := Postgres.Conn.QueryRow(context.Background(), query, adderId, title, author).Scan(&musicId);
 		err != nil {
 		fmt.Println(err)
 		return
@@ -151,6 +151,20 @@ func DeleteMusicHandler (ctx *fasthttp.RequestCtx){
 	query := "update users set music_list = array_remove(music_list, $1) where user_id = $2"
 	if _, err := Postgres.Conn.Exec(context.Background(), query, musicId, userId);
 		err != nil {
+		ctx.Error("нет такого music id", 400)
+		return
+	}
+	ctx.SetStatusCode(200)
+}
+
+func AddMusicToPlayList(ctx * fasthttp.RequestCtx){
+	userId := 1
+	musicId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("musicId"))
+	fmt.Println(musicId)
+	query := "update users set music_list = array_prepend($1, music_list) where user_id = $2"
+	if _, err := Postgres.Conn.Exec(context.Background(), query, musicId, userId);
+		err != nil {
+			fmt.Println(err)
 		ctx.Error("нет такого music id", 400)
 		return
 	}
