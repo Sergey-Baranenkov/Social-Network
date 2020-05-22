@@ -8,6 +8,7 @@ var emptyArray = json.RawMessage("[]")
 type VideoJSON struct {
 	UserVideos json.RawMessage
 	AllVideos json.RawMessage
+	Done bool
 }
 
 type AudioJson struct {

@@ -36,8 +36,15 @@ func main() {
 	Router.GET("/music/remove_music", CORSHandler(DeleteMusicHandler))
 	Router.GET("/music_storage/*filepath", CORSHandler(fasthttp.FSHandler("../music_storage", 1)))
 
-	Router.GET("/settings/hobbies", CORSHandler(HobbiesHandler))
-	Router.GET("/settings/edu_emp", CORSHandler(EduEmpHandler))
+
+	Router.GET("/settings/get_basic_info", CORSHandler(GetBasicInfoHandler))
+	Router.GET("/settings/hobbies", CORSHandler(GetHobbiesHandler))
+	Router.POST("/settings/update_hobbies", CORSHandler(UpdateHobbiesHandler))
+
+	Router.GET("/settings/get_edu_emp", CORSHandler(GetEduEmpHandler))
+	Router.POST("/settings/post_edu_emp", CORSHandler(UpdateEduEmpHandler))
+	Router.POST("/settings/update_password", CORSHandler(UpdatePasswordHandler))
+
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
 	Router.POST("/settings/update_basic_info/profile_bg", CORSHandler(AuthMiddleware(UpdateProfileBg)))
@@ -54,6 +61,8 @@ func main() {
 	Router.GET("/video/get_combined_video", CORSHandler(GetCombinedVideoHandler))
 	Router.POST("/video/post_video", CORSHandler(PostVideoHandler))
 	Router.GET("/video_storage/*filepath", CORSHandler(fasthttp.FSHandler("../video_storage", 1)))
+	Router.POST("/video/add_to_playlist",CORSHandler(AddVideoToPlayList))
+	Router.GET("/video/remove_video", CORSHandler(DeleteVideoHandler))
 
 	Router.GET ("/gallery/get_images", CORSHandler(GetUserImages))
 	Router.POST("/gallery/post_image", CORSHandler(PostImageHandler))

@@ -15,7 +15,7 @@ create table if not exists users (
 	full_name tsvector,
     sex char(1) not null check ( sex in ('М', 'Ж')),
     /*basic_info*/
-    avatar_ref text default 'hash_path/def_avatar.jpg', /*исправить путь*/
+    avatar_ref text default 'hash_path/def_avatar.jpg',
     bg_ref text default 'hash_path/def_bg',
 	tel decimal(20) default 0,
 	city text default '',
@@ -30,10 +30,6 @@ create table if not exists users (
 	fav_books text default '',
 	fav_games text default '',
 	other_interests text default '',
-
-	/*privacy*/
-	who_can_message text not null default 'all' check(who_can_message in ('all','fo')), /*fo - friends only*/
-	who_can_see_info text not null default 'all' check(who_can_see_info in ('all','fo')),
 
     /*edu_and_emp*/
     edu_and_emp_info jsonb,
@@ -384,9 +380,9 @@ $$ language plpgsql;
 
 
 var InitTestSQL = `
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs@mail.ru', E'\a','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', E'\a','Sergey','Baranenkov', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru', E'\a','Jury','Dud', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', '1 2 3 4','Sergey','Baranenkov', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru',  '1 2 3 4','Jury','Dud', 'М');
 
 insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '','lol');
