@@ -28,6 +28,8 @@ func main() {
 	Router.POST("/profile/add_new_object",CORSHandler(AddNewObjectHandler))
 	Router.POST("/profile/update_like", CORSHandler(UpdateLikeHandler))
 	Router.GET("/profile/page_info", CORSHandler(GetProfilePageInfo))
+	Router.POST("/profile/update_object_text", CORSHandler(UpdateObjectText))
+	Router.POST("/profile/delete_object", CORSHandler(DeleteObject))
 
 	Router.GET("/music/get_user_music", CORSHandler(GetUserMusicHandler))
 	Router.GET("/music/get_combined_music", CORSHandler(GetCombinedMusicHandler))
@@ -48,6 +50,7 @@ func main() {
 	Router.POST("/settings/update_basic_info/text_data", CORSHandler(UpdateBasicInfoTextHandler))
 	Router.POST("/settings/update_basic_info/profile_avatar", CORSHandler(AuthMiddleware(UpdateProfileAvatar)))
 	Router.POST("/settings/update_basic_info/profile_bg", CORSHandler(AuthMiddleware(UpdateProfileBg)))
+
 
 	Router.POST("/relations/subscribe", CORSHandler(SubscribeHandler))
 	Router.POST("/relations/unsubscribe", CORSHandler(UnsubscribeHandler))

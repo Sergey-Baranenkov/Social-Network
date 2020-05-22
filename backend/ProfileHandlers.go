@@ -49,7 +49,7 @@ func GetCommentsHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
-	authId := "1" //fix
+	authId := 1 //fix
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	option := functools.ByteSliceToString(ctx.QueryArgs().Peek("meLiked"))
 	if option == "false" {
@@ -87,4 +87,46 @@ func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
 	}
 
 	_, _ = ctx.WriteString(result)
+}
+
+type ObjectStruct struct {
+	Text string
+	Path string
+}
+
+func UpdateObjectText(ctx *fasthttp.RequestCtx){
+	userId := 1
+
+	os := ObjectStruct{}
+	if err := json.Unmarshal(ctx.PostBody(), &os); err != nil {
+		fmt.Println(err)
+		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
+		return
+	}
+
+	query := `update objects set text = $1 where path = $2 and auth_id = $3`
+	if _, err := Postgres.Conn.Exec(context.Background(), query, os.Text, os.Path, userId);
+		err != nil {
+		fmt.Println(err)
+		ctx.SetStatusCode(400)
+		return
+	}
+
+	ctx.SetStatusCode(200)
+}
+
+func DeleteObject(ctx *fasthttp.RequestCtx){
+	userId := 1
+
+	path := functools.ByteSliceToString(ctx.PostBody())
+	fmt.Println(path)
+	query := `delete from objects where path = $1 and auth_id = $2`
+	if _, err := Postgres.Conn.Exec(context.Background(), query, path, userId);
+		err != nil {
+		fmt.Println(err)
+		ctx.SetStatusCode(400)
+		return
+	}
+
+	ctx.SetStatusCode(200)
 }

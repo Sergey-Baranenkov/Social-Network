@@ -137,6 +137,22 @@ CREATE TRIGGER insert_object_after_trigger
 	AFTER INSERT ON objects
 FOR EACH ROW EXECUTE PROCEDURE insert_object_after_process ();
 
+CREATE OR REPLACE FUNCTION delete_object_after_process() RETURNS trigger AS $$
+    BEGIN
+        if nlevel(old.path) > 1 then /*comment*/
+            update post_info
+                set num_comments = num_comments - 1
+            where post_info.path = subpath(old.path,0, 1);
+        end if;
+       	return new;
+    END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS delete_object_after_trigger ON public.objects;
+CREATE TRIGGER delete_object_after_trigger
+	AFTER DELETE ON objects
+FOR EACH ROW EXECUTE PROCEDURE delete_object_after_process();
+
 
 CREATE OR REPLACE FUNCTION add_like_process() RETURNS trigger AS $add_like_process$
     begin
@@ -259,6 +275,7 @@ select json_agg(to_jsonb(res) - 'lvl')
                            o.path,
                            l2 is not null as me_liked,
                            first_name,
+					       o.auth_id,
                            last_name,
                            to_char(creation_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as creation_time,
                            to_char(modification_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as modification_time,
@@ -314,6 +331,7 @@ select json_agg(t) from (
       select o.text,
              o.path,
              o.num_likes,
+			 o.auth_id,
              to_char(o.creation_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as creation_time,
              to_char(o.modification_time at time zone 'Europe/Moscow', 'DD.MM.YY HH24:MI') as modification_time,
              first_name,
