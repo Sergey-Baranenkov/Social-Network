@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
+	"strconv"
 )
 
 func GetPostsHandler(ctx *fasthttp.RequestCtx) {
@@ -22,7 +23,7 @@ func GetPostsHandler(ctx *fasthttp.RequestCtx) {
 func AddNewObjectHandler(ctx * fasthttp.RequestCtx){
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	text := functools.ByteSliceToString(ctx.QueryArgs().Peek("text"))
-	authId := "1"
+	authId := ctx.UserValue("requestUserId").(int)
 
 	var result json.RawMessage
 	if err := Postgres.Conn.QueryRow(context.Background(),
@@ -49,7 +50,7 @@ func GetCommentsHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
-	authId := 1 //fix
+	authId := ctx.UserValue("requestUserId").(int)
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	option := functools.ByteSliceToString(ctx.QueryArgs().Peek("meLiked"))
 	if option == "false" {
@@ -72,16 +73,27 @@ func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
+	requesterId := ctx.UserValue("requestUserId").(int)
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 
+	var query string
+	var err error
 	var result string
 
-	query := `select to_json(k) from 
-				(select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday, images_list[:9] 
+	if strconv.Itoa(requesterId) == userId {
+		query = `select to_json(k) from 
+				(select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday, images_list[:9]
 					from users where user_id = $1) k;`
+		err = Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result)
+	}else{
+		query = `select to_json(k) from 
+				(select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday, images_list[:9], get_relationship($2, $1) as rel
+					from users where user_id = $1) k;`
+		err = Postgres.Conn.QueryRow(context.Background(), query, userId, requesterId).Scan(&result)
+	}
 
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result);
-		err != nil {
+	if err != nil {
+		ctx.SetStatusCode(400)
 		fmt.Println(err)
 		return
 	}
@@ -95,7 +107,7 @@ type ObjectStruct struct {
 }
 
 func UpdateObjectText(ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 
 	os := ObjectStruct{}
 	if err := json.Unmarshal(ctx.PostBody(), &os); err != nil {
@@ -116,7 +128,7 @@ func UpdateObjectText(ctx *fasthttp.RequestCtx){
 }
 
 func DeleteObject(ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 
 	path := functools.ByteSliceToString(ctx.PostBody())
 	fmt.Println(path)

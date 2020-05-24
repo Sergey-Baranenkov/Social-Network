@@ -97,7 +97,7 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 
 func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("audio")
-	adderId:= 1
+	adderId:= ctx.UserValue("requestUserId").(int)
 	author:= functools.ByteSliceToString(ctx.QueryArgs().Peek("author"))
 	title:= functools.ByteSliceToString(ctx.QueryArgs().Peek("title"))
 
@@ -145,7 +145,7 @@ func PostMusicHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func DeleteMusicHandler (ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	musicId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("musicId"))
 
 	query := "update users set music_list = array_remove(music_list, $1) where user_id = $2"
@@ -158,7 +158,7 @@ func DeleteMusicHandler (ctx *fasthttp.RequestCtx){
 }
 
 func AddMusicToPlayList(ctx * fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	musicId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("musicId"))
 	fmt.Println(musicId)
 	query := "update users set music_list = array_prepend($1, music_list) where user_id = $2"

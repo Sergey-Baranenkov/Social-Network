@@ -28,7 +28,7 @@ func AuthMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 			ctx.Redirect("/auth",401)
 		}
 		*/
-		ctx.SetUserValue("a", "b")
+		ctx.SetUserValue("requestUserId", 1)
 		next(ctx)
 	}
 }

@@ -79,7 +79,8 @@ var RelationsTable = `
 create table if not exists relations__friends (
     user_id1 bigint references users(user_id) on delete cascade on update cascade,
     user_id2 bigint references users(user_id) on delete cascade on update cascade,
-    primary key (user_id1, user_id2)
+    primary key (user_id1, user_id2),
+	check (user_id1 != user_id2)
 );
 create index if not exists rfr_uid1 on relations__friends(user_id1);
 create index if not exists rfr_uid2 on relations__friends(user_id2);
@@ -87,7 +88,8 @@ create index if not exists rfr_uid2 on relations__friends(user_id2);
 create table if not exists relations__subscribers (
     subscriber_id bigint references users(user_id) on delete cascade on update cascade,
     subscribed_id bigint references users(user_id) on delete cascade on update cascade,
-    primary key (subscriber_id, subscribed_id)
+    primary key (subscriber_id, subscribed_id),
+    check ( subscribed_id != subscriber_id )
 );
 create index if not exists rsub_uid1 on relations__subscribers(subscriber_id);
 create index if not exists rsub_uid2 on relations__subscribers(subscribed_id);
@@ -394,6 +396,26 @@ create or replace function add_friend_to_subscriber (param_subscribed_id bigint,
         end if;
     END;
 $$ language plpgsql;
+
+create or replace function get_relationship (requester_id bigint, _user_id2 bigint) returns int2 as $$
+    declare relType int2 := 0;
+
+    BEGIN
+        if exists(select * from relations__friends
+            where user_id1 = requester_id and user_id2 = _user_id2
+                     or
+                  user_id1 = _user_id2 and user_id2 = requester_id) then
+        relType = 3;
+        else
+            select case when subscriber_id = requester_id then 1 else 2 end from relations__subscribers
+                where subscriber_id = requester_id and subscribed_id = _user_id2
+                        or
+                      subscriber_id = _user_id2 and subscribed_id = requester_id into relType;
+        end if;
+        return coalesce(relType, 0);
+    END;
+$$ language plpgsql;
+
 `
 
 
@@ -407,6 +429,9 @@ insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '', 'lol');
 insert into objects (auth_id, path, text) values (1, '1','lol');
 insert into objects (auth_id, path, text) values (1, '1.1','lol');
+
+insert into relations__subscribers (subscriber_id, subscribed_id) values (1,2);
+select add_subscriber_to_friend(2, 1);
 
 insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);

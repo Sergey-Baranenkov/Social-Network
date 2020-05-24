@@ -11,28 +11,37 @@ import (
 	"strconv"
 )
 
-
+type conversationList struct {
+	Conversations json.RawMessage
+	Done bool
+}
 func SelectConversationsList (ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
+
+	cList := conversationList{emptyArray, false}
+
 	query := "select select_conversations_list($1,$2,$3)"
-	var result json.RawMessage
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId,limit,offset).Scan(&result);
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId,limit,offset).Scan(&cList.Conversations);
 		err != nil {
 			fmt.Println(err)
 			ctx.Error("параметры не верны", 400)
 			return
 	}
-	if bytes.Equal(result, null){
-		result = emptyArray
+	if bytes.Equal(cList.Conversations, null){
+		cList.Conversations = emptyArray
+		cList.Done = true
 	}
-	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
+
+	jsonResult, _ := json.Marshal(cList)
+
+	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
 
 func SelectConversationMessages (ctx *fasthttp.RequestCtx){
-	userId1 := 1
+	userId1 := ctx.UserValue("requestUserId").(int)
 	userId2 := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId2"))
 	query := "select select_conversation_messages($1,$2)"
 	var result json.RawMessage
@@ -50,7 +59,7 @@ func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 }
 
 func PushMessage (ctx *fasthttp.RequestCtx){
-	messageFrom := 1
+	messageFrom := ctx.UserValue("requestUserId").(int)
 	fmt.Println(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
 	messageTo, err := strconv.Atoi(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
 	if err != nil{
@@ -76,7 +85,7 @@ func PushMessage (ctx *fasthttp.RequestCtx){
 
 var upgrader = websocket.FastHTTPUpgrader{CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true}}
 func MessengerHandler (ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	err := upgrader.Upgrade(ctx, func(wconn *websocket.Conn){
 		MessengerWebsocketStruct.AddConn(userId, wconn)
 		fmt.Println("connected")
@@ -97,7 +106,7 @@ func MessengerHandler (ctx *fasthttp.RequestCtx){
 }
 
 func MessengerGetShortProfileInfo(ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	conversationId := functools.ByteSliceToString(ctx.QueryArgs().Peek("conversationId"))
 
 	var result json.RawMessage

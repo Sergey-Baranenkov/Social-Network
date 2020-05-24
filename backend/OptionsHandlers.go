@@ -28,7 +28,7 @@ type BasicInfoStruct struct {
 }
 
 func UpdateBasicInfoTextHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	bis := BasicInfoStruct{}
 
 	if err := json.Unmarshal(ctx.PostBody(), &bis); err != nil {
@@ -165,7 +165,7 @@ func UpdateProfileBg(ctx *fasthttp.RequestCtx) {
 }
 
 func GetEduEmpHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	query := "select edu_and_emp_info from users where user_id = $1"
 	var result json.RawMessage
 	if  err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result);
@@ -180,7 +180,7 @@ func GetEduEmpHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func GetHobbiesHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	query := "select to_json(s) from (select hobby, fav_music, fav_films, fav_books, fav_games, other_interests from users where user_id = $1) s"
 	var result json.RawMessage
 	if  err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result);
@@ -195,7 +195,7 @@ func GetHobbiesHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func UpdateEduEmpHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	reqJson := ctx.Request.Body()
 
 	query := "update users set edu_and_emp_info = $1 where user_id = $2"
@@ -213,7 +213,7 @@ type UpdatePasswordStruct struct {
 }
 
 func UpdatePasswordHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	reqJson := ctx.Request.Body()
 
 	ups := UpdatePasswordStruct{}
@@ -268,7 +268,7 @@ type UpdateHobbiesStruct struct {
 }
 
 func UpdateHobbiesHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	reqJson := ctx.Request.Body()
 
 	uhs := UpdateHobbiesStruct{}
@@ -298,7 +298,7 @@ func UpdateHobbiesHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func GetBasicInfoHandler(ctx *fasthttp.RequestCtx) {
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	query := "select to_json(s) from (select sex, status, birthday, tel, country, city from users where user_id = $1) s "
 	var result json.RawMessage
 	if  err := Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result);

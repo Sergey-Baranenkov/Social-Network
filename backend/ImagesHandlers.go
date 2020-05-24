@@ -45,7 +45,7 @@ func GetUserImages(ctx *fasthttp.RequestCtx){
 
 func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 	f, err := ctx.FormFile("image")
-	adderId:= 1
+	adderId:= ctx.UserValue("requestUserId").(int)
 
 	if err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
@@ -90,7 +90,7 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 }
 
 func DeleteImageHandler (ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	imageId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("imageId"))
 
 	query := "update users set images_list = array_remove(images_list, $1) where user_id = $2"

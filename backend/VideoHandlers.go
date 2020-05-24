@@ -95,7 +95,7 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 
 func PostVideoHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("video")
-	adderId:= 1
+	adderId:= ctx.UserValue("requestUserId").(int)
 	title:= functools.ByteSliceToString(ctx.QueryArgs().Peek("title"))
 	fmt.Println(title)
 	if err != nil {
@@ -142,7 +142,7 @@ func PostVideoHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func DeleteVideoHandler (ctx *fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	videoId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("videoId"))
 
 	query := "update users set video_list = array_remove(video_list, $1) where user_id = $2"
@@ -155,7 +155,7 @@ func DeleteVideoHandler (ctx *fasthttp.RequestCtx){
 }
 
 func AddVideoToPlayList(ctx * fasthttp.RequestCtx){
-	userId := 1
+	userId := ctx.UserValue("requestUserId").(int)
 	videoId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("videoId"))
 	fmt.Println(videoId)
 	query := "update users set video_list = array_prepend($1, video_list) where user_id = $2"
