@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"coursework/functools"
 	"encoding/json"
@@ -9,15 +10,31 @@ import (
 	"strconv"
 )
 
+type PostsStruct struct {
+	Posts json.RawMessage
+	Done bool
+}
 func GetPostsHandler(ctx *fasthttp.RequestCtx) {
-	ctx.Response.Header.Set("Content-Type", "application/json")
-	var posts string
-	if err := Postgres.Conn.QueryRow(context.Background(), "select get_posts($1, $2)", 1, 1).Scan(&posts);
+	myId := ctx.UserValue("requestUserId").(int)
+	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
+	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
+
+	ps := PostsStruct{emptyArray, false}
+
+	if err := Postgres.Conn.QueryRow(context.Background(), "select get_posts($1, $2, $3, $4)", userId, myId, limit, offset).Scan(&ps.Posts);
 	err != nil {
 		fmt.Println(err)
 		return
 	}
-	_, _ = ctx.WriteString(posts)
+
+	if bytes.Equal(ps.Posts, null){
+		ps.Posts = emptyArray
+		ps.Done = true
+	}
+
+	res, _ := json.Marshal(ps)
+	_, _ = ctx.WriteString(functools.ByteSliceToString(res))
 }
 
 func AddNewObjectHandler(ctx * fasthttp.RequestCtx){

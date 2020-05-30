@@ -40,22 +40,37 @@ func SelectConversationsList (ctx *fasthttp.RequestCtx){
 }
 
 
+type ConversationMessagesStruct struct {
+	MessagesList json.RawMessage
+	ConversationId int
+	Done bool
+}
+
 func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 	userId1 := ctx.UserValue("requestUserId").(int)
 	userId2 := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId2"))
-	query := "select select_conversation_messages($1,$2)"
-	var result json.RawMessage
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId1,userId2).Scan(&result);
+	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
+	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
+
+	cms := ConversationMessagesStruct{emptyArray, 0, false}
+
+	query := "select * from  select_conversation_messages($1,$2,$3,$4)"
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId1,userId2, limit, offset).Scan( &cms.MessagesList,
+																										&cms.ConversationId );
 		err != nil {
 			fmt.Println(err)
-		ctx.Error("параметры не верны", 400)
-		return
-	}
-	if bytes.Equal(result, null){
-		result = emptyArray
+			ctx.Error("параметры не верны", 400)
+			return
 	}
 
-	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
+	if bytes.Equal(cms.MessagesList, null){
+		cms.MessagesList = emptyArray
+		cms.Done = true
+	}
+
+	jsonResult, _ := json.Marshal(cms)
+
+	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
 func PushMessage (ctx *fasthttp.RequestCtx){

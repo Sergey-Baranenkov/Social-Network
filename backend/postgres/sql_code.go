@@ -325,7 +325,7 @@ select json_agg(to_jsonb(res) - 'lvl')
     $$ PARALLEL SAFE LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION get_posts(u_id bigint, my_id bigint) returns json as $$
+CREATE OR REPLACE FUNCTION get_posts(u_id bigint, my_id bigint, _limit bigint, _offset bigint) returns json as $$
         begin
             return
                 (
@@ -343,8 +343,8 @@ select json_agg(t) from (
       from objects o
           inner join users u on u.user_id = o.auth_id
           inner join post_info pi on o.path = pi.path
-          left join likes l on o.path = l.path and l.auth_id = 1
-      where o.auth_id = 1 order by o.creation_time desc
+          left join likes l on o.path = l.path and l.auth_id = my_id
+      where o.auth_id = u_id order by o.creation_time desc limit _limit offset _offset
     ) t
         );
         end;
@@ -437,9 +437,6 @@ insert into likes (path, auth_id) values ('1', 1);
 insert into likes (path, auth_id) values ('1.1', 1);
 insert into likes (path, auth_id) values ('2', 1);
 select push_message(1,2,'lol1');
-select push_message(2,1,'lol2');
-select push_message(1,2,'lol3');
-select push_message(1,3,'lol4');
 `
 var MessagesTables = `
 create table if not exists conversation (
@@ -501,12 +498,10 @@ execute procedure on_insert_message_function();
 
 
 -- выбор для определенной беседы (быстрый)
-create or replace function select_conversation_messages(_user_1 bigint, _user_2 bigint) returns json as $$
+create or replace function select_conversation_messages(_user_1 bigint, _user_2 bigint, _limit bigint, _offset bigint, out json_res json, out _conversation_id bigint) returns record as $$
     declare min bigint := _user_1;
     declare max bigint := _user_2;
 
-    declare _conversation_id bigint;
-    declare json_res json;
     begin
         if _user_1 > _user_2 then
             min = _user_2;
@@ -515,13 +510,12 @@ create or replace function select_conversation_messages(_user_1 bigint, _user_2 
         _conversation_id =  check_conversation_exists(min, max);
 
         if _conversation_id is not null then
-            select json_build_object('conversation_id', _conversation_id,'messages', json_agg(t)) from (select m.message_id, m.message_from, m.message_text
+            json_res = (select json_agg(t) from (select m.message_id, m.message_from, m.message_text
                 from messages m where m.conversation_id = _conversation_id
-            order by m.created_at) t
-            into json_res;
-            return json_res;
+            order by m.created_at desc offset _offset limit _limit) t);
+            return;
         else
-            return null;
+            return;
         end if;
     end;
 $$ language plpgsql;
