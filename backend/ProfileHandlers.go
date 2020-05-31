@@ -99,12 +99,12 @@ func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
 
 	if strconv.Itoa(requesterId) == userId {
 		query = `select to_json(k) from 
-				(select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday, images_list[:9]
+				(select first_name, last_name, tel, country, city, birthday, images_list[:9]
 					from users where user_id = $1) k;`
 		err = Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result)
 	}else{
 		query = `select to_json(k) from 
-				(select first_name, last_name, avatar_ref, bg_ref, tel, country, city, birthday, images_list[:9], get_relationship($2, $1) as rel
+				(select first_name, last_name, tel, country, city, birthday, images_list[:9], get_relationship($2, $1) as rel
 					from users where user_id = $1) k;`
 		err = Postgres.Conn.QueryRow(context.Background(), query, userId, requesterId).Scan(&result)
 	}

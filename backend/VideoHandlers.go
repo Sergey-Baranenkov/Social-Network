@@ -45,7 +45,7 @@ func GetUserVideoHandler(ctx *fasthttp.RequestCtx){
 func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
-	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
+	offset:= functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
 	withVal := functools.ByteSliceToString(ctx.QueryArgs().Peek("withValue"))
 	limit, err := strconv.Atoi(functools.ByteSliceToString(ctx.QueryArgs().Peek("limit")))
 
@@ -55,17 +55,16 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 	}
 
 	VideoStruct := VideoJSON{emptyArray,emptyArray, false}
-	count:= 0
 
-	if startFrom == "0" {
+	if offset == "0" {
 		query:= `
-				select count(*), json_agg(v) from
+				select json_agg(v) from
                     (select v.video_id, v.adder_id, v.name from
                         (select video_id, ordinality from users, unnest(video_list) with ordinality video_id where user_id = $1) as uvl
                         inner join video v on v.video_id = uvl.video_id where document @@ plainto_tsquery($2) order by uvl.ordinality
                     ) v ;
 			    `
-		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &VideoStruct.UserVideos); err != nil {
+		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&VideoStruct.UserVideos); err != nil {
 			fmt.Println(err)
 			ctx.SetStatusCode(400)
 			return
@@ -75,19 +74,18 @@ func GetCombinedVideoHandler(ctx *fasthttp.RequestCtx){
 		}
 	}
 
-	if count < limit {
-		query:= "select json_agg(m) from (select video_id, name, adder_id from video " +
-				"where document @@ plainto_tsquery($1) limit $2 offset $3) m; "
-		if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit - count, startFrom).Scan(&VideoStruct.AllVideos); err != nil {
-			fmt.Println(err)
-			ctx.SetStatusCode(400)
-			return
-		}
-		if bytes.Equal(VideoStruct.AllVideos, null){
-			VideoStruct.Done = true
-			VideoStruct.AllVideos = emptyArray
-		}
+	query:= "select json_agg(m) from (select video_id, name, adder_id from video " +
+			"where document @@ plainto_tsquery($1) limit $2 offset $3) m; "
+	if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit, offset).Scan(&VideoStruct.AllVideos); err != nil {
+		fmt.Println(err)
+		ctx.SetStatusCode(400)
+		return
 	}
+	if bytes.Equal(VideoStruct.AllVideos, null){
+		VideoStruct.Done = true
+		VideoStruct.AllVideos = emptyArray
+	}
+
 
 	jsonResult, _ := json.Marshal(VideoStruct)
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))

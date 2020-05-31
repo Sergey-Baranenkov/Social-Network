@@ -55,17 +55,16 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	}
 
 	AudioStruct := AudioJson{emptyArray,emptyArray, false}
-	count:= 0
 
 	if offset == "0" {
-		query:= `select count(*), json_agg(m) from
+		query:= `select json_agg(m) from
                     (select m.music_id, m.adder_id, m.name, m.author from
                         (select music_id, ordinality from users, unnest(music_list) with ordinality music_id where user_id = $1) as uml
                         inner join music m on m.music_id = uml.music_id where document @@ plainto_tsquery($2) order by uml.ordinality
                     ) m ;
 				`
 
-		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&count, &AudioStruct.UserMusic); err != nil {
+		if err := Postgres.Conn.QueryRow(context.Background(), query, userId, withVal).Scan(&AudioStruct.UserMusic); err != nil {
 			fmt.Println(err)
 			ctx.SetStatusCode(400)
 			return
@@ -76,19 +75,17 @@ func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx){
 	}
 
 
-	if count < limit {
-		query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
+	query:= `select json_agg(m) from (select music_id, name, author, adder_id from music 
 				 where document @@ plainto_tsquery($1) limit $2 offset $3) m;`
 
-		if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit - count, offset).Scan(&AudioStruct.AllMusic); err != nil {
-			fmt.Println(err)
-			ctx.SetStatusCode(400)
-			return
-		}
-		if bytes.Equal(AudioStruct.AllMusic,null){
-			AudioStruct.Done = true
-			AudioStruct.AllMusic = emptyArray
-		}
+	if err := Postgres.Conn.QueryRow(context.Background(), query, withVal, limit, offset).Scan(&AudioStruct.AllMusic); err != nil {
+		fmt.Println(err)
+		ctx.SetStatusCode(400)
+		return
+	}
+	if bytes.Equal(AudioStruct.AllMusic,null){
+		AudioStruct.Done = true
+		AudioStruct.AllMusic = emptyArray
 	}
 
 	jsonResult, _ := json.Marshal(AudioStruct)

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"coursework/functools"
+	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 )
@@ -48,26 +49,26 @@ func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
 				with friends as (
 					select (case when user_id1 = $1 then user_id2 else user_id1 end) as uid
 					from relations__friends where user_id1 = $1 or user_id2 = $1
-				) select json_agg(row) from (select user_id, first_name, last_name, avatar_ref from friends f inner join users on user_id = f.uid limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from friends f inner join users on user_id = f.uid limit $2) row;
 				`
 	case "2":
 		query = `
 				with subscribers as (
 					select subscriber_id from relations__subscribers where subscribed_id = $1
-				) select json_agg(row) from (select user_id, first_name, last_name, avatar_ref from subscribers s inner join users on user_id = s.subscriber_id limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from subscribers s inner join users on user_id = s.subscriber_id limit $2) row;
 				`
 	case "1":
 		query = `
 				with subscribed as (
 					select subscribed_id from relations__subscribers where subscriber_id = $1
-				) select json_agg(row) from (select user_id, first_name, last_name, avatar_ref from subscribed s inner join users on user_id = s.subscribed_id limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from subscribed s inner join users on user_id = s.subscribed_id limit $2) row;
 				`
 	default:
 		ctx.Error("Не указан тип relationships", 400)
 		return
 	}
 
-	result := make([]byte, 1024)
+	var result json.RawMessage
 
 	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit).Scan(&result);
 		err != nil {

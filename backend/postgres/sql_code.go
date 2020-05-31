@@ -15,8 +15,6 @@ create table if not exists users (
 	full_name tsvector,
     sex char(1) not null check ( sex in ('М', 'Ж')),
     /*basic_info*/
-    avatar_ref text default 'hash_path/def_avatar.jpg',
-    bg_ref text default 'hash_path/def_bg',
 	tel decimal(20) default 0,
 	city text default '',
 	country text default '',
@@ -284,7 +282,7 @@ select json_agg(to_jsonb(res) - 'lvl')
                            nlevel(o.path) AS lvl
                     FROM objects o inner join users on user_id = auth_id
                                    left join likes l2 on o.path = l2.path
-                    where o.path <@ text2ltree(post_path) order by o.creation_time desc
+                    where o.path <@ text2ltree(post_path) order by o.creation_time
                 ),
 
                 maxlvl AS (
@@ -420,7 +418,13 @@ $$ language plpgsql;
 
 
 var InitTestSQL = `
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs1@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs2@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs3@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs4@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs5@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs6@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+
 insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', '1 2 3 4','Sergey','Baranenkov', 'М');
 insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru',  '1 2 3 4','Jury','Dud', 'М');
 
@@ -466,14 +470,14 @@ create or replace function select_conversations_list(_user_id bigint, _limit big
     declare json_res json;
     begin
         with t as (
-            select conversation_id, last_message_id, last_message_time, u.first_name, u.last_name, u.avatar_ref, u.user_id as partner_id
+            select conversation_id, last_message_id, last_message_time, u.first_name, u.last_name, u.user_id as partner_id
                 from conversation inner join users u on (case when user_1 = _user_id then user_2 else user_1 end) = u.user_id
             where user_1 = _user_id or user_2 = _user_id
             order by last_message_time desc limit _limit offset _offset
         ),
 
         j as (
-            select m.message_from, m.message_text, t.partner_id, t.avatar_ref, t.first_name, t.last_name, t.conversation_id from t
+            select m.message_from, m.message_text, t.partner_id, t.first_name, t.last_name, t.conversation_id from t
                 inner join messages m on m.conversation_id = t.conversation_id and m.message_id = t.last_message_id order by last_message_time desc
         )
         select json_agg(j) from j into json_res;
@@ -554,7 +558,7 @@ $$ language plpgsql;
 create or replace function get_short_profile_info(_conversation_id bigint, fetcher_id bigint) returns json as $$
     declare result json;
     begin
-       select json_build_object('partner_id', user_id, 'first_name',first_name,'last_name',last_name,'avatar_ref',avatar_ref)
+       select json_build_object('partner_id', user_id, 'first_name',first_name,'last_name',last_name)
         from conversation inner join users u on (case when user_1 = fetcher_id then user_2 else user_1 end) = u.user_id
        where conversation_id = _conversation_id into result;
        return result;

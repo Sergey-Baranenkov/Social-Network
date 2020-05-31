@@ -77,6 +77,8 @@ func main() {
 
 	Router.GET("/about_me/select_extended_user_info",CORSHandler(AuthMiddleware(SelectExtendedUserInfo)))
 
+	Router.GET("/profile_bgs/*filepath", CORSHandler(fasthttp.FSHandler("../profile_bgs", 1)))
+
 	fmt.Println("LISTENING ON PORT " + ServePort)
 	server:=fasthttp.Server{MaxRequestBodySize: 1024*1024*1024, Handler: Router.Handler}
 
