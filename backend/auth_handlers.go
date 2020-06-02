@@ -13,9 +13,9 @@ import (
 	"strings"
 )
 
-/*func authPageHandler(ctx *fasthttp.RequestCtx) {
-	ctx.SendFile("frontend/html/auth.html")
-}*/
+func authPageHandler(ctx *fasthttp.RequestCtx) {
+	ctx.SendFile("../frontend/index.html")
+}
 
 func AuthMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {

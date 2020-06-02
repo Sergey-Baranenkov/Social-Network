@@ -26,7 +26,7 @@ func GetSearchedPeople(ctx * fasthttp.RequestCtx){
 		ctx.SetStatusCode(400)
 		return
 	}
-	
+
 	if bytes.Equal(sps.People, null){
 		sps.People = emptyArray
 		sps.Done = true
