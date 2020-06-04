@@ -7,11 +7,12 @@ import (
 )
 
 const (
-	letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	letterBytes   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	letterIdxBits = 6
-	letterIdxMask = 1 <<letterIdxBits - 1
+	letterIdxMask = 1<<letterIdxBits - 1
 	letterIdxMax  = 63 / letterIdxBits
 )
+
 var src = rand.NewSource(time.Now().UnixNano())
 
 func RandomStringGenerator(n int) string {

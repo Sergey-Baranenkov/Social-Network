@@ -13,23 +13,28 @@ import (
 	"strings"
 )
 
-func authPageHandler(ctx *fasthttp.RequestCtx) {
+func defaultPageHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SendFile("../frontend/index.html")
 }
 
 func AuthMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		/*redisAccessToken, err := Redis.Get(functools.ByteSliceToString(ctx.Request.Header.Cookie("userId"))).Result()
-		if err == nil && bytes.Compare(ctx.Request.Header.Cookie("accessToken"),
-			functools.StringToByteSlice(redisAccessToken)) == 0{
-			ctx.SetUserValue("a","b")
-			next(ctx)
-		}else{
-			ctx.Redirect("/auth",401)
+		userId := functools.ByteSliceToString(ctx.Request.Header.Cookie("userId"))
+		numericUserId, err := strconv.Atoi(userId)
+		if err != nil{
+			ctx.Redirect("/авторизация",401)
+			return
 		}
-		*/
-		ctx.SetUserValue("requestUserId", 1)
-		next(ctx)
+		ctx.SetUserValue("requestUserId", numericUserId)
+		redisAccessToken, err := Redis.Get(userId).Result()
+		if err == nil &&
+			bytes.Compare(
+				ctx.Request.Header.Cookie("accessToken"),
+				functools.StringToByteSlice(redisAccessToken)) == 0{
+					next(ctx)
+		}else{
+			ctx.Redirect("/авторизация",401)
+		}
 	}
 }
 
@@ -45,7 +50,6 @@ func loginHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 		return
 	}
-
 	err := Validator.Struct(obj)
 
 	if err != nil {
@@ -65,14 +69,12 @@ func loginHandler(ctx *fasthttp.RequestCtx) {
 		&lastName,
 		&dbToken)
 
-	if userToken := sha512.Sum512(append(functools.StringToByteSlice(obj.Password), Salt...));
-	!bytes.Equal(dbToken, userToken[:]) {
+	if userToken := sha512.Sum512(append(functools.StringToByteSlice(obj.Password), Salt...)); !bytes.Equal(dbToken, userToken[:]) {
 		ctx.Error("Incorrect email/pass combination", 402)
 		return
 	}
-	successfulAuth(ctx, strconv.Itoa(userId))
-	ctx.Redirect("/posts", 200)
-
+	successfulAuth(ctx, strconv.Itoa(userId), firstName, lastName)
+	ctx.Redirect("/сообщения", 200)
 }
 
 type RegistrationStruct struct {
@@ -89,7 +91,6 @@ func RegistrationHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 		return
 	}
-
 	if err := Postgres.Conn.QueryRow(context.Background(), "select 1 from users where email = $1 limit 1",
 		obj.Email).Scan(); err != pgx.ErrNoRows {
 		ctx.Error("User already exists", 402)
@@ -108,8 +109,8 @@ func RegistrationHandler(ctx *fasthttp.RequestCtx) {
 		token[:]).Scan(&userId); err != nil {
 		fmt.Println(err)
 	} else {
-		successfulAuth(ctx, strconv.Itoa(userId))
-		ctx.Redirect("/posts", 200)
+		successfulAuth(ctx, strconv.Itoa(userId), obj.FirstName, obj.LastName)
+		ctx.Redirect("/сообщения", 200)
 	}
 }
 
@@ -121,12 +122,12 @@ func CreateCookie(key string, value string, expire int) *fasthttp.Cookie {
 	authCookie.SetKey(key)
 	authCookie.SetValue(value)
 	authCookie.SetMaxAge(expire)
-	authCookie.SetHTTPOnly(true)
 	authCookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
+	authCookie.SetPath("/")
 	return &authCookie
 }
 
-func successfulAuth(ctx *fasthttp.RequestCtx, userId string) {
+func successfulAuth(ctx *fasthttp.RequestCtx, userId string, firstName string, lastName string) {
 	var accessToken string
 	for {
 		accessToken = functools.RandomStringGenerator(128)
@@ -137,7 +138,12 @@ func successfulAuth(ctx *fasthttp.RequestCtx, userId string) {
 
 	accessTokenCookie := CreateCookie("accessToken", accessToken, 36000000000)
 	idCookie := CreateCookie("userId", userId, 36000000000)
+	firstNameCookie := CreateCookie("firstName", firstName, 36000000000)
+	lastNameCookie := CreateCookie("lastName", lastName, 36000000000)
+	
 	Redis.Set(userId, accessToken, 360000000000)
 	ctx.Response.Header.SetCookie(accessTokenCookie)
 	ctx.Response.Header.SetCookie(idCookie)
+	ctx.Response.Header.SetCookie(firstNameCookie)
+	ctx.Response.Header.SetCookie(lastNameCookie)
 }

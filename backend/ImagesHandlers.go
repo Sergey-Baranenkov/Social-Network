@@ -14,27 +14,26 @@ import (
 
 type ImagesStruct struct {
 	ImagesList json.RawMessage
-	Done bool
+	Done       bool
 }
 
-func GetUserImages(ctx *fasthttp.RequestCtx){
+func GetUserImages(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Content-Type", "application/json")
-	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
-	startFrom:= functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
+	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+	startFrom := functools.ByteSliceToString(ctx.QueryArgs().Peek("startFrom"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 
-	images:= ImagesStruct{emptyArray, false}
+	images := ImagesStruct{emptyArray, false}
 
-	query:= `select json_agg(i) from (select i.* from (select image_id, ordinality from  users, unnest(images_list) with ordinality image_id 
+	query := `select json_agg(i) from (select i.* from (select image_id, ordinality from  users, unnest(images_list) with ordinality image_id 
 														where user_id = $1 limit $2 offset $3) as uil
     		 inner join images i on i.image_id = uil.image_id order by uil.ordinality) i;`
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&images.ImagesList);
-		err != nil {
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, startFrom).Scan(&images.ImagesList); err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if bytes.Equal(images.ImagesList,null){
+	if bytes.Equal(images.ImagesList, null) {
 		images.Done = true
 		images.ImagesList = emptyArray
 	}
@@ -43,9 +42,9 @@ func GetUserImages(ctx *fasthttp.RequestCtx){
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
-func PostImageHandler(ctx *fasthttp.RequestCtx)  {
+func PostImageHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("image")
-	adderId:= ctx.UserValue("requestUserId").(int)
+	adderId := ctx.UserValue("requestUserId").(int)
 
 	if err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
@@ -53,10 +52,9 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 		return
 	}
 
-	imageId:=0
-	query:= "insert into images (adder_id) values ($1) returning image_id"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, adderId).Scan(&imageId);
-		err != nil {
+	imageId := 0
+	query := "insert into images (adder_id) values ($1) returning image_id"
+	if err := Postgres.Conn.QueryRow(context.Background(), query, adderId).Scan(&imageId); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -80,8 +78,7 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 	}
 
 	query = "update users set images_list = array_prepend($1, images_list) where user_id = $2"
-	if _, err := Postgres.Conn.Exec(context.Background(), query, imageId, adderId);
-		err != nil {
+	if _, err := Postgres.Conn.Exec(context.Background(), query, imageId, adderId); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -89,13 +86,12 @@ func PostImageHandler(ctx *fasthttp.RequestCtx)  {
 	_, _ = ctx.WriteString(strconv.Itoa(imageId))
 }
 
-func DeleteImageHandler (ctx *fasthttp.RequestCtx){
+func DeleteImageHandler(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
-	imageId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("imageId"))
+	imageId := functools.ByteSliceToString(ctx.QueryArgs().Peek("imageId"))
 
 	query := "update users set images_list = array_remove(images_list, $1) where user_id = $2"
-	if _, err := Postgres.Conn.Exec(context.Background(), query, imageId, userId);
-		err != nil {
+	if _, err := Postgres.Conn.Exec(context.Background(), query, imageId, userId); err != nil {
 		ctx.Error("нет такого image_id", 400)
 		return
 	}

@@ -8,8 +8,8 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func SelectExtendedUserInfo (ctx *fasthttp.RequestCtx){
-	userId:= functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
+func SelectExtendedUserInfo(ctx *fasthttp.RequestCtx) {
+	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 
 	query := "select get_extended_info($1)"
 	var result json.RawMessage
@@ -17,7 +17,7 @@ func SelectExtendedUserInfo (ctx *fasthttp.RequestCtx){
 		ctx.SetStatusCode(400)
 		return
 	}
-	if bytes.Equal(result,null){
+	if bytes.Equal(result, null) {
 		result = emptyArray
 	}
 	_, _ = ctx.WriteString(functools.ByteSliceToString(result))

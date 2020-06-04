@@ -1,1 +1,0 @@
-{"version":3,"sources":["about_me_page.scss"],"names":[],"mappings":"AAAA,qBACE,SAAU,CACV,gBAAiB,CACjB,YAAa,CACb,sEAA+D","file":"7.ab4dafc5.chunk.css","sourcesContent":[".about_me_foreground{\n  width: 50%;\n  margin-top: 100px;\n  height: 100px;\n  background-image: url(\"../../images/about_page_foreground.png\");\n}"]}

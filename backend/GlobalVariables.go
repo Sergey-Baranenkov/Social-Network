@@ -2,17 +2,18 @@ package main
 
 import "encoding/json"
 
-var null = []byte ("null")
+var null = []byte("null")
 var emptyArray = json.RawMessage("[]")
+var emptyObject = json.RawMessage("{}")
 
 type VideoJSON struct {
 	UserVideos json.RawMessage
-	AllVideos json.RawMessage
-	Done bool
+	AllVideos  json.RawMessage
+	Done       bool
 }
 
 type AudioJson struct {
 	UserMusic json.RawMessage
-	AllMusic json.RawMessage
-	Done bool
+	AllMusic  json.RawMessage
+	Done      bool
 }

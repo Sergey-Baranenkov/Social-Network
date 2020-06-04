@@ -11,4 +11,6 @@ require (
 	github.com/lab259/cors v0.2.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/valyala/fasthttp v1.9.0
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/tools v0.0.0-20200601175630-2caf76543d99 // indirect
 )

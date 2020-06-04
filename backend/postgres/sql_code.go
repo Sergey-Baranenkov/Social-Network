@@ -13,7 +13,7 @@ create table if not exists users (
 	first_name text not null check ( length(first_name) > 0 ),
 	last_name text not null check ( length(last_name) > 0),
 	full_name tsvector,
-    sex char(1) not null check ( sex in ('М', 'Ж')),
+    sex char(1) not null check ( sex in ('M', 'F')),
     /*basic_info*/
 	tel decimal(20) default 0,
 	city text default '',
@@ -99,7 +99,6 @@ create table if not exists likes(
     primary key (path, auth_id)
 ); create index if not exists likes_path_idx on likes using gist(path);
 `
-
 
 var Triggers = `CREATE OR REPLACE FUNCTION  insert_object_before_process() RETURNS trigger AS $insert_object_before_process$
     BEGIN
@@ -416,17 +415,16 @@ $$ language plpgsql;
 
 `
 
-
 var InitTestSQL = `
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs1@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs2@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs3@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs4@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs5@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('baranenkovs6@mail.ru', '1 2 3 4','Vladimir','Putin', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs1@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs2@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs3@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs4@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs5@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('baranenkovs6@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
 
-insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', '1 2 3 4','Sergey','Baranenkov', 'М');
-insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru',  '1 2 3 4','Jury','Dud', 'М');
+insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', '1 2 3 4','Sergey','Baranenkov', 'M');
+insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru',  '1 2 3 4','Jury','Dud', 'M');
 
 insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '','lol');

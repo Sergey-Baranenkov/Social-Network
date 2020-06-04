@@ -12,8 +12,9 @@ import (
 
 type PostsStruct struct {
 	Posts json.RawMessage
-	Done bool
+	Done  bool
 }
+
 func GetPostsHandler(ctx *fasthttp.RequestCtx) {
 	myId := ctx.UserValue("requestUserId").(int)
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
@@ -22,13 +23,12 @@ func GetPostsHandler(ctx *fasthttp.RequestCtx) {
 
 	ps := PostsStruct{emptyArray, false}
 
-	if err := Postgres.Conn.QueryRow(context.Background(), "select get_posts($1, $2, $3, $4)", userId, myId, limit, offset).Scan(&ps.Posts);
-	err != nil {
+	if err := Postgres.Conn.QueryRow(context.Background(), "select get_posts($1, $2, $3, $4)", userId, myId, limit, offset).Scan(&ps.Posts); err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	if bytes.Equal(ps.Posts, null){
+	if bytes.Equal(ps.Posts, null) {
 		ps.Posts = emptyArray
 		ps.Done = true
 	}
@@ -37,15 +37,14 @@ func GetPostsHandler(ctx *fasthttp.RequestCtx) {
 	_, _ = ctx.WriteString(functools.ByteSliceToString(res))
 }
 
-func AddNewObjectHandler(ctx * fasthttp.RequestCtx){
+func AddNewObjectHandler(ctx *fasthttp.RequestCtx) {
 	path := functools.ByteSliceToString(ctx.QueryArgs().Peek("path"))
 	text := functools.ByteSliceToString(ctx.QueryArgs().Peek("text"))
 	authId := ctx.UserValue("requestUserId").(int)
 
 	var result json.RawMessage
 	if err := Postgres.Conn.QueryRow(context.Background(),
-		"select push_object($1,$2,$3)", authId, path, text).Scan(&result);
-	err != nil {
+		"select push_object($1,$2,$3)", authId, path, text).Scan(&result); err != nil {
 		fmt.Println("Error:", err)
 		ctx.SetStatusCode(400)
 		return
@@ -89,20 +88,20 @@ func UpdateLikeHandler(ctx *fasthttp.RequestCtx) {
 
 }
 
-func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
+func GetProfilePageInfo(ctx *fasthttp.RequestCtx) {
 	requesterId := ctx.UserValue("requestUserId").(int)
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 
 	var query string
 	var err error
-	var result string
+	var result json.RawMessage
 
 	if strconv.Itoa(requesterId) == userId {
 		query = `select to_json(k) from 
 				(select first_name, last_name, tel, country, city, birthday, images_list[:9]
 					from users where user_id = $1) k;`
 		err = Postgres.Conn.QueryRow(context.Background(), query, userId).Scan(&result)
-	}else{
+	} else {
 		query = `select to_json(k) from 
 				(select first_name, last_name, tel, country, city, birthday, images_list[:9], get_relationship($2, $1) as rel
 					from users where user_id = $1) k;`
@@ -114,8 +113,10 @@ func GetProfilePageInfo(ctx *fasthttp.RequestCtx){
 		fmt.Println(err)
 		return
 	}
-
-	_, _ = ctx.WriteString(result)
+	if bytes.Equal(result, null) {
+		result = emptyObject
+	}
+	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
 
 type ObjectStruct struct {
@@ -123,7 +124,7 @@ type ObjectStruct struct {
 	Path string
 }
 
-func UpdateObjectText(ctx *fasthttp.RequestCtx){
+func UpdateObjectText(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 
 	os := ObjectStruct{}
@@ -134,8 +135,7 @@ func UpdateObjectText(ctx *fasthttp.RequestCtx){
 	}
 
 	query := `update objects set text = $1 where path = $2 and auth_id = $3`
-	if _, err := Postgres.Conn.Exec(context.Background(), query, os.Text, os.Path, userId);
-		err != nil {
+	if _, err := Postgres.Conn.Exec(context.Background(), query, os.Text, os.Path, userId); err != nil {
 		fmt.Println(err)
 		ctx.SetStatusCode(400)
 		return
@@ -144,14 +144,13 @@ func UpdateObjectText(ctx *fasthttp.RequestCtx){
 	ctx.SetStatusCode(200)
 }
 
-func DeleteObject(ctx *fasthttp.RequestCtx){
+func DeleteObject(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 
 	path := functools.ByteSliceToString(ctx.PostBody())
 	fmt.Println(path)
 	query := `delete from objects where path = $1 and auth_id = $2`
-	if _, err := Postgres.Conn.Exec(context.Background(), query, path, userId);
-		err != nil {
+	if _, err := Postgres.Conn.Exec(context.Background(), query, path, userId); err != nil {
 		fmt.Println(err)
 		ctx.SetStatusCode(400)
 		return

@@ -13,9 +13,10 @@ import (
 
 type conversationList struct {
 	Conversations json.RawMessage
-	Done bool
+	Done          bool
 }
-func SelectConversationsList (ctx *fasthttp.RequestCtx){
+
+func SelectConversationsList(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
 	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
@@ -23,13 +24,12 @@ func SelectConversationsList (ctx *fasthttp.RequestCtx){
 	cList := conversationList{emptyArray, false}
 
 	query := "select select_conversations_list($1,$2,$3)"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId,limit,offset).Scan(&cList.Conversations);
-		err != nil {
-			fmt.Println(err)
-			ctx.Error("параметры не верны", 400)
-			return
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, offset).Scan(&cList.Conversations); err != nil {
+		fmt.Println(err)
+		ctx.Error("параметры не верны", 400)
+		return
 	}
-	if bytes.Equal(cList.Conversations, null){
+	if bytes.Equal(cList.Conversations, null) {
 		cList.Conversations = emptyArray
 		cList.Done = true
 	}
@@ -39,14 +39,13 @@ func SelectConversationsList (ctx *fasthttp.RequestCtx){
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
-
 type ConversationMessagesStruct struct {
-	MessagesList json.RawMessage
+	MessagesList   json.RawMessage
 	ConversationId int
-	Done bool
+	Done           bool
 }
 
-func SelectConversationMessages (ctx *fasthttp.RequestCtx){
+func SelectConversationMessages(ctx *fasthttp.RequestCtx) {
 	userId1 := ctx.UserValue("requestUserId").(int)
 	userId2 := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId2"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
@@ -55,15 +54,14 @@ func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 	cms := ConversationMessagesStruct{emptyArray, 0, false}
 
 	query := "select * from  select_conversation_messages($1,$2,$3,$4)"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId1,userId2, limit, offset).Scan( &cms.MessagesList,
-																										&cms.ConversationId );
-		err != nil {
-			fmt.Println(err)
-			ctx.Error("параметры не верны", 400)
-			return
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId1, userId2, limit, offset).Scan(&cms.MessagesList,
+		&cms.ConversationId); err != nil {
+		fmt.Println(err)
+		ctx.Error("параметры не верны", 400)
+		return
 	}
 
-	if bytes.Equal(cms.MessagesList, null){
+	if bytes.Equal(cms.MessagesList, null) {
 		cms.MessagesList = emptyArray
 		cms.Done = true
 	}
@@ -73,11 +71,11 @@ func SelectConversationMessages (ctx *fasthttp.RequestCtx){
 	_, _ = ctx.WriteString(functools.ByteSliceToString(jsonResult))
 }
 
-func PushMessage (ctx *fasthttp.RequestCtx){
+func PushMessage(ctx *fasthttp.RequestCtx) {
 	messageFrom := ctx.UserValue("requestUserId").(int)
 	fmt.Println(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
 	messageTo, err := strconv.Atoi(functools.ByteSliceToString(ctx.QueryArgs().Peek("messageTo")))
-	if err != nil{
+	if err != nil {
 		ctx.Error("параметры не верны", 400)
 		return
 	}
@@ -85,49 +83,48 @@ func PushMessage (ctx *fasthttp.RequestCtx){
 
 	var result json.RawMessage
 	query := "select push_message ($1,$2,$3)"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, messageFrom, messageTo, messageText).Scan(&result);
-		err != nil {
+	if err := Postgres.Conn.QueryRow(context.Background(), query, messageFrom, messageTo, messageText).Scan(&result); err != nil {
 		ctx.Error("параметры не верны", 400)
 		return
 	}
 	MessengerWebsocketStruct.PushMessageToConnections(messageTo, result)
-	if  messageTo != messageFrom{
+	if messageTo != messageFrom {
 		MessengerWebsocketStruct.PushMessageToConnections(messageFrom, result)
 	}
 
 	ctx.SetStatusCode(400)
 }
 
-var upgrader = websocket.FastHTTPUpgrader{CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true}}
-func MessengerHandler (ctx *fasthttp.RequestCtx){
+var upgrader = websocket.FastHTTPUpgrader{CheckOrigin: func(ctx *fasthttp.RequestCtx) bool { return true }}
+
+func MessengerHandler(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
-	err := upgrader.Upgrade(ctx, func(wconn *websocket.Conn){
+	err := upgrader.Upgrade(ctx, func(wconn *websocket.Conn) {
 		MessengerWebsocketStruct.AddConn(userId, wconn)
 		fmt.Println("connected")
 		var response json.RawMessage
 		for {
 			_, _, err := wconn.NextReader()
-			if err != nil{
-				MessengerWebsocketStruct.RemoveConn(userId,wconn)
+			if err != nil {
+				MessengerWebsocketStruct.RemoveConn(userId, wconn)
 				fmt.Println("closed" + string(userId))
 				break
 			}
 			fmt.Println(functools.ByteSliceToString(response))
 		}
 	})
-	if err != nil{
+	if err != nil {
 		fmt.Println("cannot establish upgrade connection")
 	}
 }
 
-func MessengerGetShortProfileInfo(ctx *fasthttp.RequestCtx){
+func MessengerGetShortProfileInfo(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 	conversationId := functools.ByteSliceToString(ctx.QueryArgs().Peek("conversationId"))
 
 	var result json.RawMessage
 	query := "select get_short_profile_info($1, $2)"
-	if err := Postgres.Conn.QueryRow(context.Background(), query, conversationId, userId).Scan(&result);
-		err != nil {
+	if err := Postgres.Conn.QueryRow(context.Background(), query, conversationId, userId).Scan(&result); err != nil {
 		ctx.Error("параметры не верны", 400)
 		return
 	}

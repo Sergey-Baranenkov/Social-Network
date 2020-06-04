@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"coursework/functools"
 	"encoding/json"
 	"fmt"
 	"github.com/valyala/fasthttp"
 )
-
 
 func UpdateRelationshipHandler(ctx *fasthttp.RequestCtx) {
 	requesterId := ctx.UserValue("requestUserId").(int)
@@ -27,21 +27,24 @@ func UpdateRelationshipHandler(ctx *fasthttp.RequestCtx) {
 		query = "select add_friend_to_subscriber($1, $2)"
 	}
 
-	if _, err := Postgres.Conn.Exec(context.Background(), query, requesterId, relationWith);
-		err != nil {
-			fmt.Println(err)
+	if _, err := Postgres.Conn.Exec(context.Background(), query, requesterId, relationWith); err != nil {
+		fmt.Println(err)
 		ctx.SetStatusCode(400)
 		return
 	}
 	ctx.SetStatusCode(200)
 }
 
-
-func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
+type RelationshipsStruct struct {
+	People json.RawMessage
+	Done bool
+}
+func GetRelationshipsHandler(ctx *fasthttp.RequestCtx) {
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	limit := functools.ByteSliceToString(ctx.QueryArgs().Peek("limit"))
+	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))
 	mode := functools.ByteSliceToString(ctx.QueryArgs().Peek("mode"))
-	fmt.Println(userId, limit, mode)
+	rs:= RelationshipsStruct{null, false}
 	var query string
 	switch mode {
 	case "3":
@@ -49,31 +52,34 @@ func GetRelationshipsHandler(ctx *fasthttp.RequestCtx)  {
 				with friends as (
 					select (case when user_id1 = $1 then user_id2 else user_id1 end) as uid
 					from relations__friends where user_id1 = $1 or user_id2 = $1
-				) select json_agg(row) from (select user_id, first_name, last_name from friends f inner join users on user_id = f.uid limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from friends f inner join users on user_id = f.uid limit $2 offset $3) row;
 				`
 	case "2":
 		query = `
 				with subscribers as (
 					select subscriber_id from relations__subscribers where subscribed_id = $1
-				) select json_agg(row) from (select user_id, first_name, last_name from subscribers s inner join users on user_id = s.subscriber_id limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from subscribers s inner join users on user_id = s.subscriber_id limit $2 offset $3) row;
 				`
 	case "1":
 		query = `
 				with subscribed as (
 					select subscribed_id from relations__subscribers where subscriber_id = $1
-				) select json_agg(row) from (select user_id, first_name, last_name from subscribed s inner join users on user_id = s.subscribed_id limit $2) row;
+				) select json_agg(row) from (select user_id, first_name, last_name from subscribed s inner join users on user_id = s.subscribed_id limit $2 offset $3) row;
 				`
 	default:
 		ctx.Error("Не указан тип relationships", 400)
 		return
 	}
 
-	var result json.RawMessage
-
-	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit).Scan(&result);
-		err != nil {
-			ctx.SetStatusCode(400)
+	if err := Postgres.Conn.QueryRow(context.Background(), query, userId, limit, offset).Scan(&rs.People); err != nil {
+		ctx.SetStatusCode(400)
 		return
 	}
+	if bytes.Equal(rs.People, null){
+		rs.People = emptyArray
+		rs.Done = true
+	}
+	result ,_ := json.Marshal(rs)
+
 	_, _ = ctx.WriteString(functools.ByteSliceToString(result))
 }
