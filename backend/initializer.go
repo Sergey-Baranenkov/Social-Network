@@ -38,7 +38,7 @@ func Initializer() error {
 	if err := Redis.Ping().Err(); err != nil {
 		return err
 	}
-
+	Redis.FlushAll()
 	if err := Validator.RegisterValidation("sex", validators.ValidateSex); err != nil {
 		return err
 	}

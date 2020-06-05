@@ -424,7 +424,6 @@ insert into users (email, token, first_name, last_name, sex) values ('baranenkov
 insert into users (email, token, first_name, last_name, sex) values ('baranenkovs6@mail.ru', '1 2 3 4','Vladimir','Putin', 'M');
 
 insert into users (email, token, first_name, last_name, sex) values ('lol@mail.ru', '1 2 3 4','Sergey','Baranenkov', 'M');
-insert into users (email, token, first_name, last_name, sex) values ('lol2@mail.ru',  '1 2 3 4','Jury','Dud', 'M');
 
 insert into objects (auth_id, path, text) values (1, '','lol');
 insert into objects (auth_id, path, text) values (1, '','lol');
@@ -548,7 +547,7 @@ create or replace function push_message(_message_from bigint, _message_to bigint
         end if;
         insert into messages (conversation_id, message_from, message_text)
         values (_conversation_id, _message_from, _message_text)
-        returning json_build_object('message_id',message_id, 'message_from', message_from, 'message_text',message_text, 'conversation_id', conversation_id) into result;
+        returning json_build_object('message_id',message_id, 'message_from', message_from, 'message_to', _message_to, 'message_text',message_text, 'conversation_id', conversation_id) into result;
         return result;
     end;
 $$ language plpgsql;

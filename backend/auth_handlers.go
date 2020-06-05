@@ -11,9 +11,10 @@ import (
 	"github.com/valyala/fasthttp"
 	"strconv"
 	"strings"
+	"time"
 )
 
-func defaultPageHandler(ctx *fasthttp.RequestCtx) {
+func staticPageHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SendFile("../frontend/index.html")
 }
 
@@ -22,21 +23,44 @@ func AuthMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 		userId := functools.ByteSliceToString(ctx.Request.Header.Cookie("userId"))
 		numericUserId, err := strconv.Atoi(userId)
 		if err != nil{
-			ctx.Redirect("/авторизация",401)
+			fmt.Println("num parsing error")
+			ctx.Response.Header.SetCookie(DeleteCookie("firstName"))
+			ctx.Response.Header.SetCookie(DeleteCookie("userId"))
+			ctx.Response.Header.SetCookie(DeleteCookie("lastName"))
+			ctx.Response.Header.SetCookie(DeleteCookie("accessToken"))
+			ctx.Redirect("/авторизация",307)
 			return
 		}
 		ctx.SetUserValue("requestUserId", numericUserId)
-		redisAccessToken, err := Redis.Get(userId).Result()
-		if err == nil &&
-			bytes.Compare(
-				ctx.Request.Header.Cookie("accessToken"),
-				functools.StringToByteSlice(redisAccessToken)) == 0{
-					next(ctx)
+
+		redisUserId, err := Redis.Get(functools.ByteSliceToString(ctx.Request.Header.Cookie("accessToken"))).Result()
+		fmt.Println(err, redisUserId)
+
+		if err == nil && redisUserId == userId{
+			fmt.Println("без ошибок")
+			next(ctx)
 		}else{
-			ctx.Redirect("/авторизация",401)
+			fmt.Println("ошибка нет в реедисе", redisUserId, userId, ctx.UserValue("requestUserId"))
+			ctx.Response.Header.SetCookie(DeleteCookie("firstName"))
+			ctx.Response.Header.SetCookie(DeleteCookie("userId"))
+			ctx.Response.Header.SetCookie(DeleteCookie("lastName"))
+			ctx.Response.Header.SetCookie(DeleteCookie("accessToken"))
+			ctx.Redirect("/авторизация",307)
+			return
 		}
 	}
 }
+
+
+func DeleteCookie(key string) *fasthttp.Cookie {
+	c := fasthttp.Cookie{}
+	c.SetKey(key)
+	c.SetValue("")
+	c.SetExpire(fasthttp.CookieExpireDelete)
+	c.SetPath("/")
+	return &c
+}
+
 
 type loginStruct struct {
 	Email    string `validate:"required,email"`
@@ -74,7 +98,7 @@ func loginHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	successfulAuth(ctx, strconv.Itoa(userId), firstName, lastName)
-	ctx.Redirect("/сообщения", 200)
+	ctx.Redirect("/сообщения", 307)
 }
 
 type RegistrationStruct struct {
@@ -110,7 +134,7 @@ func RegistrationHandler(ctx *fasthttp.RequestCtx) {
 		fmt.Println(err)
 	} else {
 		successfulAuth(ctx, strconv.Itoa(userId), obj.FirstName, obj.LastName)
-		ctx.Redirect("/сообщения", 200)
+		ctx.Redirect("/сообщения", 307)
 	}
 }
 
@@ -122,7 +146,6 @@ func CreateCookie(key string, value string, expire int) *fasthttp.Cookie {
 	authCookie.SetKey(key)
 	authCookie.SetValue(value)
 	authCookie.SetMaxAge(expire)
-	authCookie.SetSameSite(fasthttp.CookieSameSiteLaxMode)
 	authCookie.SetPath("/")
 	return &authCookie
 }
@@ -131,17 +154,17 @@ func successfulAuth(ctx *fasthttp.RequestCtx, userId string, firstName string, l
 	var accessToken string
 	for {
 		accessToken = functools.RandomStringGenerator(128)
-		if _, err := Redis.Get(accessToken).Result(); err != nil {
+		if res, _ := Redis.Exists(accessToken).Result(); res == 0 {
 			break
 		}
 	}
 
-	accessTokenCookie := CreateCookie("accessToken", accessToken, 36000000000)
-	idCookie := CreateCookie("userId", userId, 36000000000)
-	firstNameCookie := CreateCookie("firstName", firstName, 36000000000)
-	lastNameCookie := CreateCookie("lastName", lastName, 36000000000)
-	
-	Redis.Set(userId, accessToken, 360000000000)
+	accessTokenCookie := CreateCookie("accessToken", accessToken, 36000000)
+	idCookie := CreateCookie("userId", userId, 36000000)
+	firstNameCookie := CreateCookie("firstName", firstName, 36000000)
+	lastNameCookie := CreateCookie("lastName", lastName, 36000000)
+	Redis.Set(accessToken, userId, time.Hour * 24 * 365)
+
 	ctx.Response.Header.SetCookie(accessTokenCookie)
 	ctx.Response.Header.SetCookie(idCookie)
 	ctx.Response.Header.SetCookie(firstNameCookie)

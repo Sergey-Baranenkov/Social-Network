@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 
-	Router.NotFound = defaultPageHandler
+	Router.NotFound = staticPageHandler
 
 	Router.POST("/server/registration", RegistrationHandler)
 	Router.POST("/server/login", loginHandler)
@@ -68,7 +68,6 @@ func main() {
 
 	Router.GET("/server/messenger/conversation_list", AuthMiddleware(SelectConversationsList))
 	Router.GET("/server/messenger/conversation_messages", AuthMiddleware(SelectConversationMessages))
-	Router.POST("/server/messenger/push_message", AuthMiddleware(PushMessage))
 	Router.GET("/server/messenger/", AuthMiddleware(MessengerHandler))
 	Router.GET("/server/messenger/get_short_profile_info", AuthMiddleware(MessengerGetShortProfileInfo))
 

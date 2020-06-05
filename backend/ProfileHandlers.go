@@ -45,7 +45,6 @@ func AddNewObjectHandler(ctx *fasthttp.RequestCtx) {
 	var result json.RawMessage
 	if err := Postgres.Conn.QueryRow(context.Background(),
 		"select push_object($1,$2,$3)", authId, path, text).Scan(&result); err != nil {
-		fmt.Println("Error:", err)
 		ctx.SetStatusCode(400)
 		return
 	}
@@ -148,7 +147,6 @@ func DeleteObject(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 
 	path := functools.ByteSliceToString(ctx.PostBody())
-	fmt.Println(path)
 	query := `delete from objects where path = $1 and auth_id = $2`
 	if _, err := Postgres.Conn.Exec(context.Background(), query, path, userId); err != nil {
 		fmt.Println(err)
