@@ -86,6 +86,18 @@ func PostImageHandler(ctx *fasthttp.RequestCtx) {
 	_, _ = ctx.WriteString(strconv.Itoa(imageId))
 }
 
+func AddImageToMyGalleryHandler(ctx *fasthttp.RequestCtx){
+	userId := ctx.UserValue("requestUserId").(int)
+	imageId := functools.ByteSliceToString(ctx.QueryArgs().Peek("imageId"))
+	query := "update users set images_list = array_prepend($1, images_list) where user_id = $2"
+	if _, err := Postgres.Conn.Exec(context.Background(), query, imageId, userId); err != nil {
+		ctx.Error("нет такого image_id", 400)
+		return
+	}
+	ctx.SetStatusCode(200)
+
+}
+
 func DeleteImageHandler(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 	imageId := functools.ByteSliceToString(ctx.QueryArgs().Peek("imageId"))

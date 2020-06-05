@@ -168,13 +168,12 @@ func GetHobbiesHandler(ctx *fasthttp.RequestCtx) {
 func UpdateEduEmpHandler(ctx *fasthttp.RequestCtx) {
 	userId := ctx.UserValue("requestUserId").(int)
 	reqJson := ctx.Request.Body()
-
 	query := "update users set edu_and_emp_info = $1 where user_id = $2"
 	if _, err := Postgres.Conn.Exec(context.Background(), query, reqJson, userId); err != nil {
 		ctx.Error("", 400)
 		return
 	}
-	ctx.SetStatusCode(400)
+	ctx.SetStatusCode(200)
 }
 
 type UpdatePasswordStruct struct {
@@ -187,8 +186,9 @@ func UpdatePasswordHandler(ctx *fasthttp.RequestCtx) {
 	reqJson := ctx.Request.Body()
 
 	ups := UpdatePasswordStruct{}
-
+	fmt.Println(functools.ByteSliceToString(reqJson))
 	if err := json.Unmarshal(reqJson, &ups); err != nil {
+		fmt.Println("1")
 		ctx.SetStatusCode(400)
 		return
 	}
@@ -218,7 +218,8 @@ func UpdatePasswordHandler(ctx *fasthttp.RequestCtx) {
 
 	newToken := sha512.Sum512(append(functools.StringToByteSlice(ups.NewPassword), Salt...))
 	query = "update users set token = $1 where user_id = $2"
-	if _, err := Postgres.Conn.Exec(context.Background(), query, ups.NewPassword, newToken); err != nil {
+	if _, err := Postgres.Conn.Exec(context.Background(), query, newToken[:], userId); err != nil {
+		fmt.Println(err)
 		ctx.Error("Unhandled error", 400)
 		return
 	}

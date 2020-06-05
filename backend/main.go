@@ -65,6 +65,7 @@ func main() {
 	Router.POST("/server/gallery/post_image", AuthMiddleware(PostImageHandler))
 	Router.GET("/server/gallery/delete_image", AuthMiddleware(DeleteImageHandler))
 	Router.GET("/server/gallery_storage/*filepath", fasthttp.FSHandler("../gallery_storage", 2))
+	Router.POST("/server/gallery/add_to_my_gallery", AuthMiddleware(AddImageToMyGalleryHandler))
 
 	Router.GET("/server/messenger/conversation_list", AuthMiddleware(SelectConversationsList))
 	Router.GET("/server/messenger/conversation_messages", AuthMiddleware(SelectConversationMessages))
