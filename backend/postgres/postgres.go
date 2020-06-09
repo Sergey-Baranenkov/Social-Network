@@ -10,6 +10,7 @@ type PGXConnection struct {
 }
 
 func (rc *PGXConnection) InitDatabasesIfNotExist() (err error) {
+	//очищает postgres
 	if _, err = rc.Conn.Exec(context.Background(), DropDB); err != nil {
 		return err
 	}
