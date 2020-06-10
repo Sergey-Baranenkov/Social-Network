@@ -41,7 +41,6 @@ func GetUserMusicHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func GetCombinedMusicHandler(ctx *fasthttp.RequestCtx) {
-	fmt.Println("vovovoo")
 	ctx.Response.Header.Set("Content-Type", "application/json")
 	userId := functools.ByteSliceToString(ctx.QueryArgs().Peek("userId"))
 	offset := functools.ByteSliceToString(ctx.QueryArgs().Peek("offset"))

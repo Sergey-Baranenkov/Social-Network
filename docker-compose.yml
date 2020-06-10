@@ -2,7 +2,10 @@
 version: "3"
 
 services:
+
         app:
+                env_file:
+                    - .env
                 build: .
                 image: $PATH_TO_DOCKERHUB/go_react_socialnetwork:ver_0.$CI_PIPELINE_ID
                 environment: 
@@ -15,6 +18,8 @@ services:
                         - postgres
                         - redis
         postgres:
+                env_file:
+                    - .env
                 image: postgres
                 restart: always
                 volumes:

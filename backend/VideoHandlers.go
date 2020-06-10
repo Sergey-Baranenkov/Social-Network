@@ -93,7 +93,7 @@ func PostVideoHandler(ctx *fasthttp.RequestCtx) {
 	f, err := ctx.FormFile("video")
 	adderId := ctx.UserValue("requestUserId").(int)
 	title := functools.ByteSliceToString(ctx.QueryArgs().Peek("title"))
-	fmt.Println(title)
+
 	if err != nil {
 		ctx.Error(err.Error(), fasthttp.StatusInternalServerError)
 		fmt.Println(err)

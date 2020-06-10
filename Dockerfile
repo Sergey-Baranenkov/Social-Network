@@ -19,5 +19,6 @@ WORKDIR ../
 
 
 FROM scratch
+WORKDIR /app
 COPY --from=build app/backend/app .
-COPY --from=build app/frontend frontend
+COPY --from=build app/frontend ../frontend

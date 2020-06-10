@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/valyala/fasthttp"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -23,34 +24,31 @@ func AuthMiddleware(next fasthttp.RequestHandler) fasthttp.RequestHandler {
 		userId := functools.ByteSliceToString(ctx.Request.Header.Cookie("userId"))
 		numericUserId, err := strconv.Atoi(userId)
 		if err != nil{
-			fmt.Println("num parsing error")
-			ctx.Response.Header.SetCookie(DeleteCookie("firstName"))
-			ctx.Response.Header.SetCookie(DeleteCookie("userId"))
-			ctx.Response.Header.SetCookie(DeleteCookie("lastName"))
-			ctx.Response.Header.SetCookie(DeleteCookie("accessToken"))
+			log.Println("[ ошибка ] userId не можен быть преобразован к числу", userId)
+			DeleteAuthCookies(ctx)
 			ctx.Redirect("/авторизация",307)
 			return
 		}
 		ctx.SetUserValue("requestUserId", numericUserId)
-
 		redisUserId, err := Redis.Get(functools.ByteSliceToString(ctx.Request.Header.Cookie("accessToken"))).Result()
-		fmt.Println(err, redisUserId)
-
 		if err == nil && redisUserId == userId{
-			fmt.Println("без ошибок")
 			next(ctx)
 		}else{
-			fmt.Println("ошибка нет в реедисе", redisUserId, userId, ctx.UserValue("requestUserId"))
-			ctx.Response.Header.SetCookie(DeleteCookie("firstName"))
-			ctx.Response.Header.SetCookie(DeleteCookie("userId"))
-			ctx.Response.Header.SetCookie(DeleteCookie("lastName"))
-			ctx.Response.Header.SetCookie(DeleteCookie("accessToken"))
+			log.Println("[ ошибка ] нет в редисе", userId)
+			DeleteAuthCookies(ctx)
 			ctx.Redirect("/авторизация",307)
 			return
 		}
 	}
 }
 
+func DeleteAuthCookies (ctx *fasthttp.RequestCtx) *fasthttp.RequestCtx{
+	ctx.Response.Header.SetCookie(DeleteCookie("firstName"))
+	ctx.Response.Header.SetCookie(DeleteCookie("userId"))
+	ctx.Response.Header.SetCookie(DeleteCookie("lastName"))
+	ctx.Response.Header.SetCookie(DeleteCookie("accessToken"))
+	return ctx
+}
 
 func DeleteCookie(key string) *fasthttp.Cookie {
 	c := fasthttp.Cookie{}
