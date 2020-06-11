@@ -1,0 +1,140 @@
+.weather_top_block{
+  display: inline-flex;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.weather_content{
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  color: white;
+}
+
+.weather_icon{
+  font-size: 50px;
+}
+
+.weather__description{
+  font-size: 30px;
+}
+
+.weather__temp{
+    font-size: 54px;
+}
+
+.temp__minmax span:first-child{
+  margin-right: 10px;
+}
+
+
+.weather__additional_info{
+  display: inline-flex;
+  flex-direction: row;
+  margin-top: 50px;
+  & > div:not(:first-child){
+    margin-left: 30px;
+  }
+}
+
+.weather__additional_info__block{
+  display: inline-flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-direction: column;
+  height: 125px;
+  width: 75px;
+  text-align: center;
+  font-size: 14px;
+}
+
+$weather_icon_size: 50px;
+.pressure_icon, .real_temp_feel_icon, .humidity_icon, .wind_icon{
+  width: $weather_icon_size;
+  height: $weather_icon_size;
+  filter: invert(100%);
+}
+
+.wind_icon{
+  background-image: url("../../images/wind_icon.ico");
+}
+
+.pressure_icon{
+  background-image: url("../../images/pressure_icon.ico");
+}
+
+.real_temp_feel_icon{
+  background-image: url("../../images/real_temp_feel_icon.ico");
+}
+
+.humidity_icon{
+  background-image: url("../../images/humidity_icon.ico");
+}
+
+.weather_date_and_place, .weather_last_observation_time{
+  width: 250px;
+  margin-top: 20px;
+  color:white;
+}
+
+.weather_date_and_place{
+  line-height: 20px;
+}
+
+.weather_last_observation_time{
+  font-size: 14px;
+}
+
+.weather__place{
+  font-size: 12px;
+}
+
+.extended_forecast__block{
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.extended_forecast__item{
+  text-align: center;
+  margin-top: 20px;
+  width: inherit;
+}
+.extended_forecast_date{
+  margin-bottom: 20px;
+  font-size: 30px;
+}
+.extended_forecast_hours_row{
+  display: inline-flex;
+  justify-content: space-around;
+  width: inherit;
+}
+
+.extended_forecast_hrow__item{
+  padding: 5px;
+  border-radius: 5px;
+  width: 150px;
+  height: 200px;
+}
+
+.ex_forecast__hour{
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.weather_city__input{
+  margin-top: 10px;
+  width: 300px;
+  height: 50px;
+  border: 1px dashed gray;
+  border-radius: 7px;
+  text-align: center;
+  outline: none;
+  font-size: 24px;
+}

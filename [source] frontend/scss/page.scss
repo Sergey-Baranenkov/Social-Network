@@ -1,0 +1,62 @@
+.page__container{
+  display:inline-flex;
+  align-items: center;
+  flex-direction: column;
+  width: 95%;
+}
+
+.page__header{
+  padding-top: 50px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  height: 400px;
+  text-align: center;
+  margin-bottom: 30px;
+  h1{
+    margin-bottom: 50px;
+  }
+  p{
+    max-width: 1000px;
+  }
+}
+
+.background_pic__city{
+  animation: move_left 50s linear infinite;
+  background-repeat: repeat-x;
+  background-size: cover;
+  min-height: 350px;
+  height: inherit;
+}
+
+.background_pic__city_purple{
+  background-image: url("../images/purple_city_pic.png");
+}
+
+.background_pic__city_orange{
+  background-image: url("../images/orange_city_pic.png");
+}
+
+.background_pic__city_black{
+  background-image: url("../images/dark_city_pic.png");
+}
+
+.background_pic__city_green{
+  background-image: url("../images/green_city_pic.png");
+}
+
+.background_pic__city_blue{
+  background-image: url("../images/blue_city_pic.png");
+}
+
+
+@keyframes move_left{
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -4000px 0;
+  }
+}

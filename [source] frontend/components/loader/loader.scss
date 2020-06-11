@@ -1,0 +1,85 @@
+#floatingCirclesG{
+  position:relative;
+  width:176px;
+  height:176px;
+  margin:auto;
+  transform:scale(0.6);
+}
+
+.f_circleG{
+  position:absolute;
+  background-color: #edf2f6;
+  height:32px;
+  width:32px;
+  border-radius:17px;
+  animation-name:f_fadeG;
+  animation-duration:1.2s;
+  animation-iteration-count:infinite;
+  animation-direction:normal;
+}
+
+#frotateG_01{
+  left:0;
+  top:72px;
+  animation-delay:0.45s;
+}
+
+#frotateG_02{
+  left:21px;
+  top:21px;
+  animation-delay:0.6s;
+}
+
+#frotateG_03{
+  left:72px;
+  top:0;
+  animation-delay:0.75s;
+}
+
+#frotateG_04{
+  right:21px;
+  top:21px;
+  animation-delay:0.9s;
+}
+
+#frotateG_05{
+  right:0;
+  top:72px;
+  animation-delay:1.05s;
+}
+
+#frotateG_06{
+  right:21px;
+  bottom:21px;
+  animation-delay:1.2s;
+}
+
+#frotateG_07{
+  left:72px;
+  bottom:0;
+  animation-delay:1.35s;
+}
+
+#frotateG_08{
+  left:21px;
+  bottom:21px;
+  animation-delay:1.5s;
+}
+
+@keyframes f_fadeG{
+  0%{
+    background-color:rgba(235,106,7,0.98);
+  }
+
+  100%{
+    background-color:rgb(255,255,255);
+  }
+}
+
+.loader{
+  width:100%;
+  height:100%;
+  display: flex;
+  justify-content: center;
+  align-items:center;
+}

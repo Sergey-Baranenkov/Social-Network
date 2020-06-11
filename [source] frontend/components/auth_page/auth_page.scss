@@ -1,0 +1,77 @@
+@keyframes animated_background {
+  0% {
+    background-position: 0 0; }
+  100% {
+    background-position: -400px -400px; } }
+
+.auth_page__container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  background-image: url("../../images/auth_bg.png");
+  animation: animated_background 15s linear infinite;
+}
+.reg_form {
+  display: flex;
+  flex-direction: column;
+  background-color: #24333c; }
+
+.auth_switcher {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center; }
+.auth_switcher div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  width: 300px;
+  height: 50px;
+  color: lightgrey;
+  background-color: #435359; }
+
+.auth_switcher input {
+  display: none; }
+.auth_switcher input:checked + div {
+  background-color: #1ab188; }
+.auth_switcher input:hover + div {
+  background-color: #179b77; }
+
+.auth_form {
+  padding: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 20px; }
+.auth_form input, select {
+  font-size: 20px;
+  height: 50px;
+  padding-left: 10px;
+  padding-right: 10px;
+  box-sizing: border-box;
+  border: 1px solid #a0b3b0;
+  background-color: inherit;
+  color: white;
+  outline: none; }
+.auth_form input::placeholder, select {
+  color: #a0b3b0; }
+.auth_form input:focus {
+  border-color: #1ab188; }
+
+
+.auth_header {
+  text-align: center;
+  font-size: 30px;
+  color: white; }
+
+.full_width {
+  grid-column: 1/3; }
+
+#signup_submit_button {
+  background-color: #1ab188;
+  height: 50px;
+  color: white;
+  font-size: 25px; }

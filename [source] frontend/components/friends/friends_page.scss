@@ -1,0 +1,56 @@
+@import "../../scss/relationships";
+
+.friends_foreground_pic{
+  margin-top: 30px;
+  width: 60%;
+  height: 130px;
+  background-size: 100% 100%;
+  background-image: url("../../images/friends_foreground_pic.png");
+}
+
+.friends_classifier__container{
+  display: inline-flex;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.friends_classifier__item{
+  width: 100%;
+  text-align: center;
+  background-color: mediumseagreen;
+  color: white;
+
+  &:not(:last-of-type){
+    border-right: 1px solid white;
+  }
+}
+
+.rel_user__send_mes{
+  font-size: 22px;
+  color: saddlebrown;
+  &:hover{
+    cursor: pointer;
+  }
+}
+
+.rel__functional{
+  margin-left: auto;
+}
+
+.rel__button{
+  background-color: inherit;
+  font-size: 40px;
+  height: 50px;
+  width: 50px;
+  &:hover{
+    cursor: pointer;
+  }
+}
+
+.delete_friend__button{
+  color: red;
+}
+
+.add_friend__button{
+  color: green;
+}

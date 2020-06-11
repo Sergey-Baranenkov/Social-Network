@@ -1,0 +1,46 @@
+.send_new_message__container{
+  width: 100%;
+  background-color: white;
+  margin-bottom: 20px;
+  textarea{
+    border: 1px dotted gray;
+    resize: vertical;
+  }
+}
+
+.add_record__button{
+  width: 150px;
+  height: 100%;
+  font-size: 20px;
+  border-radius: 5px;
+  background-color: lightseagreen;
+  color: white;
+}
+
+.send_new_message__functional_area{
+  margin-top: 10px;
+  padding: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  height: 50px;
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.smile_area{
+  width: 50px;
+  height: 35px;
+  overflow-x: hidden;
+  &:hover{
+    width: 335px;
+  }
+}
+
+.smile{
+  cursor: pointer;
+  font-size: 28px;
+  &:not(:last-of-type){
+    margin-right: 5px;
+  }
+}

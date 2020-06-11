@@ -1,0 +1,59 @@
+@import "variables.scss";
+
+.b-popup{
+    width:100%;
+    min-height:100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow:hidden;
+    position:fixed;
+    top: $header_height;
+}
+
+.b-popup-content{
+    margin: 100px auto;
+    width: 600px;
+    height: 600px;
+    background-color: white;
+    border-radius:5px;
+}
+
+.b-popup-content{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position:relative;
+    input {
+        width: 400px;
+        height: 80px;
+        border: 5px solid gray;
+        padding: 5px;
+        margin-top: 50px;
+        font-size: 35px;
+        box-sizing: border-box;
+        &::placeholder{
+            text-align: center;
+        }
+    }
+}
+
+.popup_button__action{
+    position: absolute;
+    height: 80px;
+    width: 400px;
+    bottom: 50px;
+    border-radius: 20px;
+    font-size: 30px;
+    color: white;
+    background-color: teal;
+}
+
+.popup_button__close{
+    background-color: red;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    position: absolute;
+    right: 0;
+    width: 50px;
+    height:50px;
+}

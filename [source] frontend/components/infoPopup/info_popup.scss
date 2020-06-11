@@ -1,0 +1,20 @@
+.info_popup{
+  right: 1%;
+  z-index: 99999;
+  width: 500px;
+  position: fixed;
+  background-color: rgba(255,255,255,0.8);
+  border-radius: 0 0 5px 5px;
+  color: darkslategray;
+  min-height: 200px;
+  padding: 30px;
+  box-sizing: border-box;
+  word-break: break-all;
+  animation: sank 0.3s ease-in-out forwards;
+  font-size: 20px;
+}
+
+@keyframes sank {
+  from {top: -1000px}
+  to {top: 0}
+}

@@ -1,0 +1,171 @@
+@import "../../scss/variables";
+
+
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: Roboto, serif;
+  font-weight: 400;
+}
+a {
+  text-decoration: none;
+}
+ul {
+  list-style-type: none;
+}
+
+body{
+  background-color: #edf2f6;
+}
+
+input {
+  border: none;
+  background-color: inherit;
+  color:inherit;
+}
+
+
+%sidebar_shared {
+  z-index: 3;
+  position: fixed;
+  display: inline-flex;
+  flex-direction: column;
+  height: 100%;
+  width: $header_height;
+  top: $header_height;
+  background-color: white;
+}
+
+.sidebar_left {
+  @extend %sidebar_shared;
+  overflow: hidden;
+  left: 0;
+  transition: width 0.3s;
+}
+
+.show_menu__effect{
+  width: 250px;
+}
+
+$sidebar_left_icon_s: 50px;
+
+.sidebar_left__item{
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  min-height: $header_height;
+  i{
+    display: block;
+    margin-left: 10px;
+    min-width: $sidebar_left_icon_s;
+    height: $sidebar_left_icon_s;
+    background-size: 40px;
+  }
+  span{
+    white-space: nowrap;
+    margin-left: 20px;
+    font-size: 18px;
+  }
+}
+
+
+.show_menu__button{
+  background-image: url("../../images/menu_icon.svg");
+}
+.show_photos__button{
+  background-image: url("../../images/camera_icon.png");
+}
+.show_messages__button{
+  background-image: url("../../images/messages_icon.png");
+}
+
+.show_friends__button{
+  background-image: url("../../images/friends_icon.png");
+}
+
+.show_my_profile__button{
+  background-image: url("../../images/home.ico");
+}
+
+.show_music__button{
+  background-image: url("../../images/music_icon.png");
+}
+
+.show_video__button{
+  background-image: url("../../images/video_icon.png");
+}
+
+.show_weather__button{
+  background-image: url("../../images/weather_icon.png");
+}
+
+.show_settings__button{
+  background-image: url("../../images/settings_icon.png");
+}
+
+.sidebar_right {
+  @extend %sidebar_shared;
+  right: 0;
+}
+
+.header_top{
+  position: fixed;
+  top: 0;
+  z-index: 3;
+  width: 100%;
+  height: $header_height;
+  background-color: $gray_header_color;
+}
+
+.header_top__container{
+  position: absolute;
+  height: 100%;
+  padding-left: 10px;
+  padding-right: 10px;
+  width: calc(100% - #{$header_height * 2 } - 10px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.exit_button{
+  position: absolute;
+  right: 0;
+  background-color: rgba(0,0,0,0);
+  filter: invert(100%);
+  width: $header_height;
+  height: $header_height;
+  background-size: 40%;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-image: url("../../images/exit_button.png");
+}
+
+.header__logo{
+  height: $header_height;
+  width: $header_height;
+}
+
+.main_app{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(100% - 2*#{$header_height});
+  margin: $header_height auto 0 auto;
+  height: 100%;
+}
+
+.confirm_button{
+  height: 75px;
+  width: 100%;
+  background-color: coral;
+  border-radius: 0.25em;
+}
+
+.cancel_button{
+  height: 75px;
+  width: 100%;
+  background-color: gray;
+  border-radius: 0.25em;
+}

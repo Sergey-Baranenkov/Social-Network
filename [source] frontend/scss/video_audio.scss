@@ -1,0 +1,21 @@
+.VA_func_block{
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 50px;
+  input{
+    width: 100%;
+    height: 100%;
+  }
+  label{
+    height: 50px;
+    width: 50px;
+    font-size: 30px;
+    color:white;
+    background-color: cadetblue;
+    text-align: center;
+    line-height: 50px;
+  }
+}
+

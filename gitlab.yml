@@ -1,0 +1,60 @@
+image: tmaier/docker-compose:latest
+services:
+    - docker:dind
+
+stages:
+    - test
+    - dockerhub_push
+    - deploy 
+    
+testing:
+  stage: test
+  variables:
+    PORT: 8091
+  tags:
+    - predeploy_runner
+  script:
+    - docker-compose up -d --build app
+    - docker build -t test tests/. && docker run --env PORT="$PORT" --network host test
+    - docker-compose down
+
+lint:
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+  stage: test
+  tags:
+    - predeploy_runner
+  script:
+    - cd backend
+    - go mod download
+    - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
+    - golangci-lint run --out-format code-climate | jq -r '.[] | "\(.location.path):\(.location.lines.begin) \(.description)"' >> gl-code-quality-report.txt
+  artifacts:
+    when: always
+    paths:
+      - backend/gl-code-quality-report.txt
+        
+  allow_failure: true
+  
+ 
+dockerhub_push:
+  stage: dockerhub_push
+  tags: 
+    - predeploy_runner
+  variables:
+    PORT: 1234
+    
+  script:
+    - docker-compose build
+    - docker login --username $DOCKER_USERNAME --password=$DOCKER_PASSWORD
+    - docker push $DOCKER_USERNAME/go_react_socialnetwork:ver_0.$CI_PIPELINE_ID
+    
+deploy:
+  stage: deploy
+  variables:
+    PORT: 8090
+  tags:
+    - deploy_runner
+  script:
+    - docker-compose up -d --build app
+    
+

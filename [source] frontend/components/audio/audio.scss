@@ -1,0 +1,61 @@
+@import "../../scss/page";
+@import "../../scss/default_blocks";
+
+.audio_foreground_pic{
+  margin-top: 30px;
+  width: 50%;
+  height: 150px;
+  background-image: url("../../images/audio_fg_pic.png");
+}
+
+.audio_track{
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: 20px;
+  &:hover{
+    cursor: pointer;
+  }
+}
+
+.audio_info{
+  margin-left: 20px;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 50px 10px 1fr;
+  grid-template-areas:
+          "cover . name"
+          "cover . author";
+}
+
+.audio_cover{
+  grid-area: cover;
+  width: 50px;
+  height: 50px;
+}
+
+.audio_track__name{
+  grid-area: name;
+  font-weight: bold;
+}
+.audio_track__author{
+  grid-area: author;
+}
+
+.audio__button{
+  height: 50px;
+  width: 50px;
+  font-size: 24px;
+  background-color: inherit;
+  &:hover{
+    cursor: pointer;
+  }
+}
+.audio__button-delete{
+  color: red;
+}
+
+.audio__button-add{
+  color: green;
+}

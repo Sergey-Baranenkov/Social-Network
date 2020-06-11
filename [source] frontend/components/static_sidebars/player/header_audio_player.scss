@@ -1,0 +1,8 @@
+@import "../../../scss/variables";
+$rhap_theme-color: lightgray;      // Color of all buttons and volume/progress indicators
+$rhap_background-color: inherit; // Color of the player background
+$rhap_time-color: lightgray;       // Font color of current time and duration
+@import "../../../../node_modules/react-h5-audio-player/src/styles";
+.rhap_container {
+  box-shadow: none;
+}

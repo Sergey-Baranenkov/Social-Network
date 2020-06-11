@@ -1,0 +1,26 @@
+.settings_foreground_pic{
+  margin-top: 30px;
+  width: 50%;
+  height: 150px;
+  background-image: url("../../images/settings_page_foreground.png");
+}
+
+.settings__main{
+  display: grid;
+  grid-gap: 30px;
+  grid-template-columns: 1fr 3fr;
+  width: 100%;
+}
+
+.education__delete_button{
+  $size: 60px;
+  border-radius: 25%;
+  min-width: $size;
+  min-height: $size;
+  background-color: darkslategray;
+}
+
+.add_field__button{
+  color: gray;
+  background-color: inherit;
+}

@@ -1,0 +1,145 @@
+@import "../../scss/relationships";
+@import "../../scss/variables";
+.message_page{
+  display: inline-flex;
+  width: 95%;
+  height: calc(100vh - #{$header_height} - #{$default_gap});
+  margin-top: $default_gap;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.messenger{
+  width: 100%;
+  height: 100%;
+}
+
+.conversations_list{
+  width: 40%;
+  height: 100%;
+  box-sizing: border-box;
+  margin-right: 10px;
+  overflow-y: scroll;
+}
+
+.messenger__header{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 10%;
+  padding: 5px;
+  box-sizing: border-box;
+  background-color: lightslategray;
+  font-size: 26px;
+}
+
+
+.messenger__friend_name{
+  color: white;
+}
+
+.messenger__messages-box{
+  width: 100%;
+  height: 70%;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
+  padding-top: 50px;
+  box-sizing: border-box;
+  margin-bottom: 5px;
+}
+
+.message{
+  width: 30%;
+  color: white;
+  font-size: 26px;
+  word-break: break-all;
+  padding: 30px 10px;
+  &:not(:last-of-type){
+    margin-bottom: 50px;
+  }
+}
+
+.message__from_me{
+  text-align: right;
+  align-self: flex-end;
+  background-color: lightslategray;
+  border-radius: 15px 0 0 15px;
+}
+
+.message__from_friend{
+  background-color: cadetblue;
+  border-radius: 0 20px 20px 0;
+}
+
+.messenger__send_new_message{
+  position: relative;
+  width: 100%;
+  height: 10%;
+}
+
+$tubmleweed_size: 70px;
+.tumbleweed{
+  position: absolute;
+  top: -120px;
+  width: $tubmleweed_size;
+  height: $tubmleweed_size;
+  background: url('https://vignette4.wikia.nocookie.net/imaspeedrunner/images/3/3a/Orphan_tumbleweed.png/revision/latest?cb=20131006213006') no-repeat;
+  background-size: $tubmleweed_size;
+}
+
+.tumbleweed{
+  animation: tumbleweed linear 5s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes tumbleweed{
+  0% {
+    margin-left: calc(0);
+    transform:  translateY(45px)  rotate(0deg) ;
+  }
+
+  10% {
+    margin-left: calc(10% - #{$tubmleweed_size});
+    transform:  translateY(35px)  rotate(130deg) ;
+  }
+
+  20% {
+    margin-left: calc(20% - #{$tubmleweed_size});
+    transform:  translateY(45px)  rotate(250deg) ;
+  }
+  30% {
+    margin-left: calc(30% - #{$tubmleweed_size});
+    transform:  translateY(35px)  rotate(360deg) ;
+  }
+  40% {
+    margin-left: calc(40% - #{$tubmleweed_size});
+    transform:  translateY(45px)  rotate(490deg) ;
+  }
+  50% {
+    margin-left: calc(50% - #{$tubmleweed_size});
+    transform:  translateY(35px)  rotate(600deg) ;
+  }
+  60% {
+    margin-left: calc(60% - #{$tubmleweed_size});
+    transform:  translateY(45px)  rotate(720deg) ;
+  }
+  70% {
+    margin-left: calc(70% - #{$tubmleweed_size});
+    transform:  translateY(35px)  rotate(840deg) ;
+  }
+  80% {
+    margin-left: calc(80% - #{$tubmleweed_size});
+    transform:  translateY(45px)  rotate(960deg) ;
+  }
+  90% {
+    margin-left: calc(90% - #{$tubmleweed_size});
+    transform:  translateY(35px)  rotate(1080deg) ;
+  }
+
+  100% {
+    margin-left: calc(100% - #{$tubmleweed_size});
+    transform:  translateY(45px)  rotate(1200deg) ;
+  }
+}
